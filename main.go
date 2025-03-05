@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"iter"
+	"slices"
 	"sort"
 	"strings"
 )
@@ -45,6 +46,13 @@ func termToList(t Term) (terms []Term, tail Term) {
 	}
 	tail = t
 	return
+}
+
+func listToTerm(terms []Term, tail Term) Term {
+	for _, t := range terms {
+		tail = Struct{".", []Term{t, tail}}
+	}
+	return tail
 }
 
 type Ref struct {
@@ -107,7 +115,15 @@ func (t *Ref) String() string {
 
 // --- Clause ---
 
+type Rule interface {
+	toClause() Clause
+}
+
 type Clause []Struct
+
+func (c Clause) toClause() Clause {
+	return c
+}
 
 func (c Clause) Head() Struct {
 	return c[0]
@@ -169,6 +185,54 @@ func refToTerm(x Term) Term {
 	return x
 }
 
+// --- DCG ---
+
+type DCG []Struct
+
+func (c DCG) toClause() Clause {
+	var ss Clause
+	ss = append(ss, Struct{c[0].Name, slices.Concat(c[0].Args, []Term{Var("L0"), Var("L")})})
+	var i int
+	for _, s := range c[1:] {
+		// List
+		terms, tail := termToList(s)
+		if len(terms) > 0 {
+			if tail != Atom("[]") {
+				panic(fmt.Sprintf("invalid DCG"))
+			}
+			curr, next := Var(fmt.Sprintf("L%d", i)), Var(fmt.Sprintf("L%d", i+1))
+			ss = append(ss, Struct{"=", []Term{curr, listToTerm(terms, next)}})
+			i++
+			continue
+		}
+		// Embedded code
+		if s.Name == "{}" {
+			for _, arg := range s.Args {
+				ss = append(ss, arg.(Struct))
+			}
+			continue
+		}
+		// Other grammar rules
+		curr, next := Var(fmt.Sprintf("L%d", i)), Var(fmt.Sprintf("L%d", i+1))
+		ss = append(ss, Struct{s.Name, slices.Concat(s.Args, []Term{curr, next})})
+		i++
+	}
+	curr := Var(fmt.Sprintf("L%d", i))
+	ss = append(ss, Struct{"=", []Term{curr, Var("L")}})
+	return ss
+}
+
+func (c DCG) String() string {
+	if len(c) == 1 {
+		return fmt.Sprintf("%v --> [].", c[0])
+	}
+	body := make([]string, len(c)-1)
+	for i, s := range c[1:] {
+		body[i] = s.String()
+	}
+	return fmt.Sprintf("%v -->\n  %s.", c[0], strings.Join(body, ",\n  "))
+}
+
 // --- Solution and KB ---
 
 type Solution map[Var]Term
@@ -186,32 +250,32 @@ func (x Solution) String() string {
 
 type KnowledgeBase struct {
 	functors []Functor
-	index0   map[Functor][]Clause
+	index0   map[Functor][]Rule
 }
 
-func NewKnowledgeBase(clauses ...Clause) *KnowledgeBase {
+func NewKnowledgeBase(rules ...Rule) *KnowledgeBase {
 	kb := &KnowledgeBase{
-		index0: make(map[Functor][]Clause),
+		index0: make(map[Functor][]Rule),
 	}
-	for _, clause := range clauses {
-		kb.Assert(clause)
+	for _, rule := range rules {
+		kb.Assert(rule)
 	}
 	return kb
 }
 
-func (kb *KnowledgeBase) Assert(clause Clause) {
-	f := clause.Head().Functor()
+func (kb *KnowledgeBase) Assert(rule Rule) {
+	f := rule.toClause().Head().Functor()
 	if _, ok := kb.index0[f]; !ok {
 		kb.functors = append(kb.functors, f)
 	}
-	kb.index0[f] = append(kb.index0[f], clause)
+	kb.index0[f] = append(kb.index0[f], rule)
 }
 
-func (kb *KnowledgeBase) Matching(goal Struct) iter.Seq[Clause] {
-	return func(yield func(Clause) bool) {
+func (kb *KnowledgeBase) Matching(goal Struct) iter.Seq[Rule] {
+	return func(yield func(Rule) bool) {
 		f := goal.Functor()
-		for _, clause := range kb.index0[f] {
-			if !yield(clause) {
+		for _, rule := range kb.index0[f] {
+			if !yield(rule) {
 				break
 			}
 		}
@@ -225,11 +289,16 @@ func (kb *KnowledgeBase) String() string {
 			b.WriteString("\n\n")
 		}
 		fmt.Fprintf(&b, "%% %v\n", f)
-		for j, clause := range kb.index0[f] {
+		for j, rule := range kb.index0[f] {
 			if j > 0 {
 				b.WriteRune('\n')
 			}
-			fmt.Fprintf(&b, "%v", clause)
+			fmt.Fprintf(&b, "%v", rule)
+			if dcg, ok := rule.(DCG); ok {
+				fmt.Fprintf(&b, "\n/*")
+				fmt.Fprintf(&b, "%v", dcg.toClause())
+				fmt.Fprintf(&b, "*/\n")
+			}
 		}
 	}
 	return b.String()
@@ -267,8 +336,8 @@ func (s *solver) dfs(goals []Struct) bool {
 	}
 	goal, rest := goals[0], goals[1:]
 	n := len(s.trail)
-	for clause := range s.kb.Matching(goal) {
-		clause = varToRef(clause, map[Var]*Ref{}).(Clause)
+	for rule := range s.kb.Matching(goal) {
+		clause := varToRef(rule.toClause(), map[Var]*Ref{}).(Clause)
 		if s.unify(clause.Head(), goal) {
 			if !s.dfs(append(clause.Body(), rest...)) {
 				return false
@@ -340,6 +409,43 @@ func main() {
 			st("phrase", Var("Goal"), Var("List"), Var("Rest")),
 			st("call", Var("Goal"), Var("List"), Var("Rest")),
 		},
+		Clause{st("=", Var("X"), Var("X"))},
+		Clause{
+			st("member", Var("Elem"), st(".", Var("H"), Var("T"))),
+			st("member_", Var("T"), Var("Elem"), Var("H")),
+		},
+		Clause{st("member_", Var("_"), Var("Elem"), Var("Elem"))},
+		Clause{
+			st("member_", st(".", Var("H"), Var("T")), Var("Elem"), Var("_")),
+			st("member_", Var("T"), Var("Elem"), Var("H")),
+		},
+		DCG{
+			st("atom", st("atom", st(".", Var("Char"), Var("Chars")))),
+			st(".", Var("Char"), Atom("[]")),
+			st("{}", st("atom_start", Var("Char"))),
+			st("ident_chars", Var("Chars")),
+		},
+		DCG{
+			st("var", st("var", st(".", Var("Char"), Var("Chars")))),
+			st(".", Var("Char"), Atom("[]")),
+			st("{}", st("var_start", Var("Char"))),
+			st("ident_chars", Var("Chars")),
+		},
+		DCG{
+			st("ident_chars", st(".", Var("Char"), Var("Chars"))),
+			st(".", Var("Char"), Atom("[]")),
+			st("{}", st("ident", Var("Char"))),
+			st("ident_chars", Var("Chars")),
+		},
+		DCG{st("ident_chars", Atom("[]"))},
+		Clause{st("atom_start", Var("Char")), st("lower", Var("Char"))},
+		Clause{st("atom_start", Var("Char")), st("digit", Var("Char"))},
+		Clause{st("var_start", Atom("'_'"))},
+		Clause{st("var_start", Var("Char")), st("upper", Var("Char"))},
+		Clause{st("ident", Atom("'_'"))},
+		Clause{st("ident", Var("Char")), st("lower", Var("Char"))},
+		Clause{st("ident", Var("Char")), st("upper", Var("Char"))},
+		Clause{st("ident", Var("Char")), st("digit", Var("Char"))},
 	)
 	fmt.Println(kb)
 	fmt.Println()
@@ -372,5 +478,16 @@ func main() {
 	fmt.Println(query)
 	for solution := range kb.Solve(query) {
 		fmt.Println(solution)
+	}
+	fmt.Println("% First 5 lists with 'a'")
+	cnt = 1
+	query = Clause{st("query"), st("member", Atom("a"), Var("List"))}
+	fmt.Println(query)
+	for solution := range kb.Solve(query) {
+		fmt.Println(solution)
+		if cnt >= 5 {
+			break
+		}
+		cnt++
 	}
 }
