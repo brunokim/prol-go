@@ -282,6 +282,10 @@ func (kb *KnowledgeBase) Matching(goal Struct) iter.Seq[Rule] {
 	}
 }
 
+const (
+	printDCGExpansion = false
+)
+
 func (kb *KnowledgeBase) String() string {
 	var b strings.Builder
 	for i, f := range kb.functors {
@@ -294,10 +298,10 @@ func (kb *KnowledgeBase) String() string {
 				b.WriteRune('\n')
 			}
 			fmt.Fprintf(&b, "%v", rule)
-			if dcg, ok := rule.(DCG); ok {
+			if dcg, ok := rule.(DCG); ok && printDCGExpansion {
 				fmt.Fprintf(&b, "\n/*")
 				fmt.Fprintf(&b, "%v", dcg.toClause())
-				fmt.Fprintf(&b, "*/\n")
+				fmt.Fprintf(&b, "*/")
 			}
 		}
 	}
@@ -419,6 +423,39 @@ func main() {
 			st("member_", st(".", Var("H"), Var("T")), Var("Elem"), Var("_")),
 			st("member_", Var("T"), Var("Elem"), Var("H")),
 		},
+		DCG{st("term", Var("Term")), st("struct", Var("Term"))},
+		DCG{st("term", Var("Term")), st("atom", Var("Term"))},
+		DCG{st("term", Var("Term")), st("var", Var("Term"))},
+		DCG{
+			st("struct", st("struct", Var("Name"), Var("Args"))),
+			st("atom", st("atom", Var("Name"))),
+			st("ws"),
+			st(".", Atom("'('"), Atom("[]")),
+			st("ws"),
+			st("terms", Var("Args")),
+			st("ws"),
+			st(".", Atom("')'"), Atom("[]")),
+		},
+		DCG{
+			st("struct", st("struct", Var("Name"), Atom("[]"))),
+			st("atom", st("atom", Var("Name"))),
+			st("ws"),
+			st(".", Atom("'('"), Atom("[]")),
+			st("ws"),
+			st(".", Atom("')'"), Atom("[]")),
+		},
+		DCG{
+			st("terms", st(".", Var("Term"), Var("Terms"))),
+			st("term", Var("Term")),
+			st("ws"),
+			st(".", Atom("','"), Atom("[]")),
+			st("ws"),
+			st("terms", Var("Terms")),
+		},
+		DCG{
+			st("terms", st(".", Var("Term"), Atom("[]"))),
+			st("term", Var("Term")),
+		},
 		DCG{
 			st("atom", st("atom", st(".", Var("Char"), Var("Chars")))),
 			st(".", Var("Char"), Atom("[]")),
@@ -438,6 +475,13 @@ func main() {
 			st("ident_chars", Var("Chars")),
 		},
 		DCG{st("ident_chars", Atom("[]"))},
+		DCG{
+			st("ws"),
+			st(".", Var("Char"), Atom("[]")),
+			st("{}", st("space", Var("Char"))),
+			st("ws"),
+		},
+		DCG{st("ws")},
 		Clause{st("atom_start", Var("Char")), st("lower", Var("Char"))},
 		Clause{st("atom_start", Var("Char")), st("digit", Var("Char"))},
 		Clause{st("var_start", Atom("'_'"))},
@@ -446,7 +490,19 @@ func main() {
 		Clause{st("ident", Var("Char")), st("lower", Var("Char"))},
 		Clause{st("ident", Var("Char")), st("upper", Var("Char"))},
 		Clause{st("ident", Var("Char")), st("digit", Var("Char"))},
+		Clause{st("space", Atom("' '"))},
+		Clause{st("space", Atom("'\n'"))},
+		Clause{st("space", Atom("'\t'"))},
 	)
+	for ch := 'A'; ch <= 'Z'; ch++ {
+		kb.Assert(Clause{st("upper", Atom(fmt.Sprintf("'%c'", ch)))})
+	}
+	for ch := 'a'; ch <= 'z'; ch++ {
+		kb.Assert(Clause{st("lower", Atom(string(ch)))})
+	}
+	for ch := '0'; ch <= '9'; ch++ {
+		kb.Assert(Clause{st("digit", Atom(string(ch)))})
+	}
 	fmt.Println(kb)
 	fmt.Println()
 	var query Clause
