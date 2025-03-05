@@ -1,0 +1,6 @@
+# Vim
+.*.swo
+.*.swp
+
+# Executable
+main

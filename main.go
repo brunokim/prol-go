@@ -2,10 +2,16 @@ package main
 
 import (
 	"fmt"
+	"iter"
+	"sort"
+	"strings"
 )
+
+// --- Terms ---
 
 type Term interface {
 	isTerm()
+	fmt.Stringer
 }
 
 type Atom string
@@ -26,9 +32,24 @@ type Functor struct {
 	Arity int
 }
 
+func (f Functor) String() string {
+	return fmt.Sprintf("%v/%d", f.Name, f.Arity)
+}
+
+func termToList(t Term) (terms []Term, tail Term) {
+	s, ok := t.(Struct)
+	for ok && s.Name == "." && len(s.Args) == 2 {
+		terms = append(terms, s.Args[0])
+		t = s.Args[1]
+		s, ok = t.(Struct)
+	}
+	tail = t
+	return
+}
+
 type Ref struct {
 	Name  Var
-	Id    int
+	ID    int
 	Value Term
 }
 
@@ -48,6 +69,44 @@ func deref(t Term) Term {
 	return t
 }
 
+func (t Atom) String() string {
+	return string(t)
+}
+
+func (t Var) String() string {
+	return string(t)
+}
+
+func (t Struct) String() string {
+	terms, tail := termToList(t)
+	if len(terms) > 0 {
+		strs := make([]string, len(terms))
+		for i, term := range terms {
+			strs[i] = term.String()
+		}
+		if tail == Atom("[]") {
+			return fmt.Sprintf("[%s]", strings.Join(strs, ", "))
+		}
+		return fmt.Sprintf("[%s|%v]", strings.Join(strs, ", "), tail)
+	}
+	var b strings.Builder
+	fmt.Fprintf(&b, "%v(", t.Name)
+	for i, arg := range t.Args {
+		if i > 0 {
+			b.WriteString(", ")
+		}
+		fmt.Fprintf(&b, "%v", deref(arg))
+	}
+	b.WriteRune(')')
+	return b.String()
+}
+
+func (t *Ref) String() string {
+	return fmt.Sprintf("%s@%d", t.Name, t.ID)
+}
+
+// --- Clause ---
+
 type Clause []Struct
 
 func (c Clause) Head() Struct {
@@ -56,6 +115,17 @@ func (c Clause) Head() Struct {
 
 func (c Clause) Body() []Struct {
 	return c[1:]
+}
+
+func (c Clause) String() string {
+	if len(c) == 1 {
+		return fmt.Sprintf("%s.", c.Head())
+	}
+	body := make([]string, len(c)-1)
+	for i, goal := range c.Body() {
+		body[i] = goal.String()
+	}
+	return fmt.Sprintf("%s :-\n  %s.", c.Head(), strings.Join(body, ",\n  "))
 }
 
 func varToRef(x any, env map[Var]*Ref) any {
@@ -99,37 +169,105 @@ func refToTerm(x Term) Term {
 	return x
 }
 
-type Solver struct {
-	clauses    map[Functor][]Clause
-	trail      []*Ref
-	onSolution func() bool
+// --- Solution and KB ---
+
+type Solution map[Var]Term
+
+func (x Solution) String() string {
+	keyvals := make([]string, len(x))
+	var i int
+	for k, v := range x {
+		keyvals[i] = fmt.Sprintf("%v: %v", k, v)
+		i++
+	}
+	sort.Strings(keyvals)
+	return fmt.Sprintf("{%s}", strings.Join(keyvals, ", "))
 }
 
-func (s *Solver) Solve(query []Struct, onSolution func(map[Var]Term) bool) {
+type KnowledgeBase struct {
+	functors []Functor
+	index0   map[Functor][]Clause
+}
+
+func NewKnowledgeBase(clauses ...Clause) *KnowledgeBase {
+	kb := &KnowledgeBase{
+		index0: make(map[Functor][]Clause),
+	}
+	for _, clause := range clauses {
+		kb.Assert(clause)
+	}
+	return kb
+}
+
+func (kb *KnowledgeBase) Assert(clause Clause) {
+	f := clause.Head().Functor()
+	if _, ok := kb.index0[f]; !ok {
+		kb.functors = append(kb.functors, f)
+	}
+	kb.index0[f] = append(kb.index0[f], clause)
+}
+
+func (kb *KnowledgeBase) Matching(goal Struct) iter.Seq[Clause] {
+	return func(yield func(Clause) bool) {
+		f := goal.Functor()
+		for _, clause := range kb.index0[f] {
+			if !yield(clause) {
+				break
+			}
+		}
+	}
+}
+
+func (kb *KnowledgeBase) String() string {
+	var b strings.Builder
+	for i, f := range kb.functors {
+		if i > 0 {
+			b.WriteString("\n\n")
+		}
+		fmt.Fprintf(&b, "%% %v\n", f)
+		for j, clause := range kb.index0[f] {
+			if j > 0 {
+				b.WriteRune('\n')
+			}
+			fmt.Fprintf(&b, "%v", clause)
+		}
+	}
+	return b.String()
+}
+
+// --- Solver ---
+
+type solver struct {
+	kb    *KnowledgeBase
+	env   map[Var]*Ref
+	trail []*Ref
+	yield func(Solution) bool
+}
+
+func (kb *KnowledgeBase) Solve(query Clause) iter.Seq[Solution] {
 	env := make(map[Var]*Ref)
-	query = []Struct(varToRef(Clause(query), env).(Clause))
-	s.trail = nil
-	s.onSolution = func() bool {
-		m := make(map[Var]Term)
-		for x, ref := range env {
+	query = varToRef(query, env).(Clause)
+	s := solver{kb: kb, env: env}
+	return func(yield func(Solution) bool) {
+		s.yield = yield
+		s.dfs(query)
+	}
+}
+
+func (s *solver) dfs(goals []Struct) bool {
+	if len(goals) == 0 {
+		m := make(Solution)
+		for x, ref := range s.env {
 			if x[0] == '_' {
 				continue
 			}
 			m[x] = refToTerm(ref)
 		}
-		return onSolution(m)
-	}
-	s.dfs(query)
-	s.trail = nil
-}
-
-func (s *Solver) dfs(goals []Struct) bool {
-	if len(goals) == 0 {
-		return s.onSolution()
+		return s.yield(m)
 	}
 	goal, rest := goals[0], goals[1:]
 	n := len(s.trail)
-	for _, clause := range s.clauses[goal.Functor()] {
+	for clause := range s.kb.Matching(goal) {
 		clause = varToRef(clause, map[Var]*Ref{}).(Clause)
 		if s.unify(clause.Head(), goal) {
 			if !s.dfs(append(clause.Body(), rest...)) {
@@ -144,7 +282,7 @@ func (s *Solver) dfs(goals []Struct) bool {
 	return true
 }
 
-func (s *Solver) unify(t1, t2 Term) bool {
+func (s *solver) unify(t1, t2 Term) bool {
 	t1, t2 = deref(t1), deref(t2)
 	s1, isStruct1 := t1.(Struct)
 	s2, isStruct2 := t2.(Struct)
@@ -175,52 +313,64 @@ func (s *Solver) unify(t1, t2 Term) bool {
 	return false
 }
 
+// --- Test ---
+
 func st(name string, terms ...Term) Struct {
 	return Struct{Atom(name), terms}
 }
 
 func main() {
-	solver := Solver{
-		clauses: map[Functor][]Clause{
-			Functor{"nat", 1}: []Clause{
-				Clause{st("nat", Atom("0"))},
-				Clause{
-					st("nat", st("s", Var("X"))),
-					st("nat", Var("X")),
-				},
-			},
-			Functor{"add", 3}: []Clause{
-				Clause{st("add", Atom("0"), Var("X"), Var("X"))},
-				Clause{
-					st("add", st("s", Var("A")), Var("B"), st("s", Var("C"))),
-					st("add", Var("A"), Var("B"), Var("C")),
-				},
-			},
+	kb := NewKnowledgeBase(
+		Clause{st("query")},
+		Clause{st("nat", Atom("0"))},
+		Clause{
+			st("nat", st("s", Var("X"))),
+			st("nat", Var("X")),
 		},
-	}
-	fmt.Println("First 5 natural numbers:")
+		Clause{st("add", Atom("0"), Var("X"), Var("X"))},
+		Clause{
+			st("add", st("s", Var("A")), Var("B"), st("s", Var("C"))),
+			st("add", Var("A"), Var("B"), Var("C")),
+		},
+		Clause{
+			st("phrase", Var("Goal"), Var("List")),
+			st("phrase", Var("Goal"), Var("List"), Atom("[]")),
+		},
+		Clause{
+			st("phrase", Var("Goal"), Var("List"), Var("Rest")),
+			st("call", Var("Goal"), Var("List"), Var("Rest")),
+		},
+	)
+	fmt.Println(kb)
+	fmt.Println()
+	var query Clause
+	fmt.Println("% First 5 natural numbers")
 	cnt := 1
-	solver.Solve([]Struct{st("nat", Var("X"))}, func(m map[Var]Term) bool {
-		fmt.Println(m)
+	query = Clause{st("query"), st("nat", Var("X"))}
+	fmt.Println(query)
+	for solution := range kb.Solve(query) {
+		fmt.Println(solution)
 		if cnt >= 5 {
-			return false
+			break
 		}
 		cnt++
-		return true
-	})
+	}
 	fmt.Println()
-	fmt.Println("All sums of two numbers that lead to 3:")
-	solver.Solve([]Struct{st("add", Var("X"), Var("Y"), st("s", st("s", st("s", Atom("0")))))}, func(m map[Var]Term) bool {
-		fmt.Println(m)
-		return true
-	})
+	fmt.Println("% All combinations of two numbers that sum to 3")
+	query = Clause{st("query"), st("add", Var("X"), Var("Y"), st("s", st("s", st("s", Atom("0")))))}
+	fmt.Println(query)
+	for solution := range kb.Solve(query) {
+		fmt.Println(solution)
+	}
 	fmt.Println()
-	fmt.Println("All sums of three numbers that lead to 5:")
-	solver.Solve([]Struct{
-		st("add", Var("X"), Var("Y"), Var("_Tmp")),
+	fmt.Println("% All combinations of three numbers that sum to 5")
+	query = Clause{
+		st("query"),
 		st("add", Var("_Tmp"), Var("Z"), st("s", st("s", st("s", st("s", st("s", Atom("0"))))))),
-	}, func(m map[Var]Term) bool {
-		fmt.Println(m)
-		return true
-	})
+		st("add", Var("X"), Var("Y"), Var("_Tmp")),
+	}
+	fmt.Println(query)
+	for solution := range kb.Solve(query) {
+		fmt.Println(solution)
+	}
 }
