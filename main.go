@@ -274,11 +274,58 @@ func (c Builtin) Unify(s Solver, goal Struct) ([]Struct, bool) {
 	return c.unify(s, goal)
 }
 
-func atomBuiltin(s Solver, goal Struct) ([]Struct, bool)        { return nil, false }
-func varBuiltin(s Solver, goal Struct) ([]Struct, bool)         { return nil, false }
-func atomToCharsBuiltin(s Solver, goal Struct) ([]Struct, bool) { return nil, false }
-func charsToAtomBuiltin(s Solver, goal Struct) ([]Struct, bool) { return nil, false }
-func atomLengthBuiltin(s Solver, goal Struct) ([]Struct, bool)  { return nil, false }
+func atomBuiltin(s Solver, goal Struct) ([]Struct, bool) {
+	term := deref(goal.Args[0])
+	_, ok := term.(Atom)
+	return nil, ok
+}
+
+func varBuiltin(s Solver, goal Struct) ([]Struct, bool) {
+	term := deref(goal.Args[0])
+	_, ok := term.(*Ref)
+	return nil, ok
+}
+
+func atomToCharsBuiltin(s Solver, goal Struct) ([]Struct, bool) {
+	arg1, arg2 := deref(goal.Args[0]), deref(goal.Args[1])
+	atom, ok := arg1.(Atom)
+	if !ok {
+		log.Printf("atom->chars/2: arg #1: not an atom: %v", arg1)
+		return nil, false
+	}
+	chars := make([]Term, len(atom))
+	for i, ch := range atom {
+		chars[i] = Atom(string(ch))
+	}
+	term := listToTerm(chars, Atom("[]"))
+	return nil, s.Unify(term, arg2)
+}
+
+func charsToAtomBuiltin(s Solver, goal Struct) ([]Struct, bool) {
+	arg1, arg2 := deref(goal.Args[0]), deref(goal.Args[1])
+	chars, tail := termToList(arg2)
+	if tail != Atom("[]") {
+		log.Printf("atom->chars/2: arg #2: not a proper list: %v", arg2)
+		return nil, false
+	}
+	var b strings.Builder
+	for _, ch := range chars {
+		b.WriteString(string(ch.(Atom)))
+	}
+	atom := Atom(b.String())
+	return nil, s.Unify(arg1, atom)
+}
+
+func atomLengthBuiltin(s Solver, goal Struct) ([]Struct, bool) {
+	arg1, arg2 := deref(goal.Args[0]), deref(goal.Args[1])
+	atom, ok := arg1.(Atom)
+	if !ok {
+		log.Printf("atom_length/2: arg #1: not an atom: %v", arg1)
+		return nil, false
+	}
+	length := Atom(string(len(atom)))
+	return nil, s.Unify(length, arg2)
+}
 
 // --- Solution and KB ---
 
