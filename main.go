@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"iter"
+	"log"
 	"slices"
 	"sort"
 	"strings"
@@ -49,7 +50,8 @@ func termToList(t Term) (terms []Term, tail Term) {
 }
 
 func listToTerm(terms []Term, tail Term) Term {
-	for _, t := range terms {
+	for i := len(terms) - 1; i >= 0; i-- {
+		t := terms[i]
 		tail = Struct{".", []Term{t, tail}}
 	}
 	return tail
@@ -116,14 +118,14 @@ func (t *Ref) String() string {
 // --- Clause ---
 
 type Rule interface {
-	toClause() Clause
+	isRule()
+	Functor() Functor
+	Unify(s Solver, goal Struct) (body []Struct, ok bool)
 }
 
 type Clause []Struct
 
-func (c Clause) toClause() Clause {
-	return c
-}
+func (Clause) isRule() {}
 
 func (c Clause) Head() Struct {
 	return c[0]
@@ -131,6 +133,18 @@ func (c Clause) Head() Struct {
 
 func (c Clause) Body() []Struct {
 	return c[1:]
+}
+
+func (c Clause) Functor() Functor {
+	return c.Head().Functor()
+}
+
+func (c Clause) Unify(s Solver, goal Struct) ([]Struct, bool) {
+	c = varToRef(c, map[Var]*Ref{}).(Clause)
+	if !s.Unify(c.Head(), goal) {
+		return nil, false
+	}
+	return c.Body(), true
 }
 
 func (c Clause) String() string {
@@ -189,6 +203,16 @@ func refToTerm(x Term) Term {
 
 type DCG []Struct
 
+func (DCG) isRule() {}
+
+func (c DCG) Functor() Functor {
+	return Functor{c[0].Name, len(c[0].Args) + 2}
+}
+
+func (c DCG) Unify(s Solver, goal Struct) ([]Struct, bool) {
+	return c.toClause().Unify(s, goal)
+}
+
 func (c DCG) toClause() Clause {
 	var ss Clause
 	ss = append(ss, Struct{c[0].Name, slices.Concat(c[0].Args, []Term{Var("L0"), Var("L")})})
@@ -233,6 +257,29 @@ func (c DCG) String() string {
 	return fmt.Sprintf("%v -->\n  %s.", c[0], strings.Join(body, ",\n  "))
 }
 
+// --- Builtins
+
+type Builtin struct {
+	functor Functor
+	unify   func(Solver, Struct) ([]Struct, bool)
+}
+
+func (Builtin) isRule() {}
+
+func (c Builtin) Functor() Functor {
+	return c.functor
+}
+
+func (c Builtin) Unify(s Solver, goal Struct) ([]Struct, bool) {
+	return c.unify(s, goal)
+}
+
+func atomBuiltin(s Solver, goal Struct) ([]Struct, bool)        { return nil, false }
+func varBuiltin(s Solver, goal Struct) ([]Struct, bool)         { return nil, false }
+func atomToCharsBuiltin(s Solver, goal Struct) ([]Struct, bool) { return nil, false }
+func charsToAtomBuiltin(s Solver, goal Struct) ([]Struct, bool) { return nil, false }
+func atomLengthBuiltin(s Solver, goal Struct) ([]Struct, bool)  { return nil, false }
+
 // --- Solution and KB ---
 
 type Solution map[Var]Term
@@ -264,11 +311,16 @@ func NewKnowledgeBase(rules ...Rule) *KnowledgeBase {
 }
 
 func (kb *KnowledgeBase) Assert(rule Rule) {
-	f := rule.toClause().Head().Functor()
+	f := rule.Functor()
 	if _, ok := kb.index0[f]; !ok {
 		kb.functors = append(kb.functors, f)
 	}
 	kb.index0[f] = append(kb.index0[f], rule)
+}
+
+func (kb *KnowledgeBase) PredicateExists(goal Struct) bool {
+	_, ok := kb.index0[goal.Functor()]
+	return ok
 }
 
 func (kb *KnowledgeBase) Matching(goal Struct) iter.Seq[Rule] {
@@ -310,6 +362,10 @@ func (kb *KnowledgeBase) String() string {
 
 // --- Solver ---
 
+type Solver interface {
+	Unify(t1, t2 Term) bool
+}
+
 type solver struct {
 	kb    *KnowledgeBase
 	env   map[Var]*Ref
@@ -339,11 +395,15 @@ func (s *solver) dfs(goals []Struct) bool {
 		return s.yield(m)
 	}
 	goal, rest := goals[0], goals[1:]
+	if !s.kb.PredicateExists(goal) {
+		log.Printf("predicate does not exist for goal: %v", goal.Functor())
+		return false
+	}
 	n := len(s.trail)
 	for rule := range s.kb.Matching(goal) {
-		clause := varToRef(rule.toClause(), map[Var]*Ref{}).(Clause)
-		if s.unify(clause.Head(), goal) {
-			if !s.dfs(append(clause.Body(), rest...)) {
+		body, ok := rule.Unify(s, goal)
+		if ok {
+			if !s.dfs(slices.Concat(body, rest)) {
 				return false
 			}
 		}
@@ -355,7 +415,7 @@ func (s *solver) dfs(goals []Struct) bool {
 	return true
 }
 
-func (s *solver) unify(t1, t2 Term) bool {
+func (s *solver) Unify(t1, t2 Term) bool {
 	t1, t2 = deref(t1), deref(t2)
 	s1, isStruct1 := t1.(Struct)
 	s2, isStruct2 := t2.(Struct)
@@ -364,7 +424,7 @@ func (s *solver) unify(t1, t2 Term) bool {
 			return false
 		}
 		for i := 0; i < len(s1.Args); i++ {
-			if !s.unify(s1.Args[i], s2.Args[i]) {
+			if !s.Unify(s1.Args[i], s2.Args[i]) {
 				return false
 			}
 		}
@@ -394,6 +454,13 @@ func st(name string, terms ...Term) Struct {
 
 func main() {
 	kb := NewKnowledgeBase(
+		// Builtins
+		Builtin{Functor{"atom", 1}, atomBuiltin},
+		Builtin{Functor{"var", 1}, varBuiltin},
+		Builtin{Functor{"atom->chars", 2}, atomToCharsBuiltin},
+		Builtin{Functor{"chars->atom", 2}, charsToAtomBuiltin},
+		Builtin{Functor{"atom_length", 2}, atomLengthBuiltin},
+		// Basic clauses
 		Clause{st("query")},
 		Clause{st("nat", Atom("0"))},
 		Clause{
@@ -423,6 +490,25 @@ func main() {
 			st("member_", st(".", Var("H"), Var("T")), Var("Elem"), Var("_")),
 			st("member_", Var("T"), Var("Elem"), Var("H")),
 		},
+		// atom_chars
+		Clause{
+			st("atom_chars", Var("Atom"), Var("Chars")),
+			st("var", Var("Atom")),
+			st("is_char_list", Var("Chars")),
+			st("chars->atom", Var("Chars"), Var("Atom")),
+		},
+		Clause{
+			st("atom_chars", Var("Atom"), Var("Chars")),
+			st("atom", Var("Atom")),
+			st("atom->chars", Var("Atom"), Var("Chars")),
+		},
+		Clause{st("is_char_list", Atom("[]"))},
+		Clause{
+			st("is_char_list", st(".", Var("Char"), Var("Chars"))),
+			st("atom_length", Var("Char"), Atom("1")),
+			st("is_char_list", Var("Chars")),
+		},
+		// Prolog parser.
 		DCG{st("term", Var("Term")), st("struct", Var("Term"))},
 		DCG{st("term", Var("Term")), st("atom", Var("Term"))},
 		DCG{st("term", Var("Term")), st("var", Var("Term"))},
@@ -457,16 +543,18 @@ func main() {
 			st("term", Var("Term")),
 		},
 		DCG{
-			st("atom", st("atom", st(".", Var("Char"), Var("Chars")))),
+			st("atom", st("atom", Var("Atom"))),
 			st(".", Var("Char"), Atom("[]")),
 			st("{}", st("atom_start", Var("Char"))),
 			st("ident_chars", Var("Chars")),
+			st("{}", st("atom_chars", Var("Atom"), st(".", Var("Char"), Var("Chars")))),
 		},
 		DCG{
-			st("var", st("var", st(".", Var("Char"), Var("Chars")))),
+			st("var", st("var", Var("Var"))),
 			st(".", Var("Char"), Atom("[]")),
 			st("{}", st("var_start", Var("Char"))),
 			st("ident_chars", Var("Chars")),
+			st("{}", st("atom_chars", Var("Var"), st(".", Var("Char"), Var("Chars")))),
 		},
 		DCG{
 			st("ident_chars", st(".", Var("Char"), Var("Chars"))),
@@ -545,5 +633,15 @@ func main() {
 			break
 		}
 		cnt++
+	}
+	fmt.Println()
+	fmt.Println("% Parsing term")
+	query = Clause{
+		st("query"),
+		st("struct", Var("Struct"), listToTerm([]Term{Atom("f"), Atom("'('"), Atom("a"), Atom("','"), Atom("'X'"), Atom("')'")}, Atom("[]")), Atom("[]")),
+	}
+	fmt.Println(query)
+	for solution := range kb.Solve(query) {
+		fmt.Println(solution)
 	}
 }
