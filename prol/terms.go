@@ -1,0 +1,190 @@
+package prol
+
+import (
+	"fmt"
+	"regexp"
+	"strings"
+	"unicode"
+	"unicode/utf8"
+)
+
+// --- Terms ---
+
+// Term represents a logic term in Prolog.
+type Term interface {
+	isTerm()
+	fmt.Stringer
+}
+
+// Atom is an immutable symbol.
+type Atom string
+
+// Var is a static-time variable.
+type Var string
+
+// Struct is a compound of multiple terms with a name.
+type Struct struct {
+	Name Atom
+	Args []Term
+}
+
+// Ref is a run-time variable.
+type Ref struct {
+	name  Var
+	id    int
+	Value Term
+}
+
+func (Atom) isTerm()   {}
+func (Var) isTerm()    {}
+func (Struct) isTerm() {}
+func (*Ref) isTerm()   {}
+
+// --- Constructors ---
+
+// NewVar creates a new variable, checking that the provided name is valid.
+func NewVar(name string) (Var, error) {
+	r, size := utf8.DecodeRuneInString(name)
+	if r == utf8.RuneError && size == 0 {
+		return Var(""), fmt.Errorf("empty var name")
+	}
+	if r == utf8.RuneError && size == 1 {
+		return Var(""), fmt.Errorf("invalid encoding")
+	}
+	if !(unicode.IsUpper(r) || r == '_') {
+		return Var(""), fmt.Errorf("first char in var is not uppercase or underscore: %c", r)
+	}
+	return Var(name), nil
+}
+
+// MustVar is like NewVar, but panics if the name is invalid.
+func MustVar(name string) Var {
+	v, err := NewVar(name)
+	if err != nil {
+		panic(err.Error())
+	}
+	return v
+}
+
+// NewStruct creates a struct from the given parameters.
+func NewStruct(name string, terms ...Term) Struct {
+	return Struct{Atom(name), terms}
+}
+
+var (
+	refID = 0
+)
+
+// NewRef creates a fresh reference from the provided var.
+func NewRef(v Var) *Ref {
+	refID++
+	return &Ref{v, refID, nil}
+}
+
+// --- Functor ---
+
+// Functor represents the basic shape of a struct, with its name and arity.
+type Functor struct {
+	Name  Atom
+	Arity int
+}
+
+func (f Functor) String() string {
+	return fmt.Sprintf("%v/%d", f.Name, f.Arity)
+}
+
+func (s Struct) Functor() Functor {
+	return Functor{s.Name, len(s.Args)}
+}
+
+// --- Conversion between term and list
+
+// TermToList unwraps a linked list of cons cells into a list of terms.
+func TermToList(t Term) (terms []Term, tail Term) {
+	s, ok := t.(Struct)
+	for ok && s.Name == "." && len(s.Args) == 2 {
+		terms = append(terms, s.Args[0])
+		t = s.Args[1]
+		s, ok = t.(Struct)
+	}
+	tail = t
+	return
+}
+
+// ListToTerm wraps the given list of terms into a linked list.
+func ListToTerm(terms []Term, tail Term) Term {
+	for i := len(terms) - 1; i >= 0; i-- {
+		t := terms[i]
+		tail = Struct{".", []Term{t, tail}}
+	}
+	return tail
+}
+
+// --- Ref ---
+
+// Deref walks the chain of references until finding a non-ref term, or unbound ref.
+func Deref(t Term) Term {
+	if ref, ok := t.(*Ref); ok && ref.Value != nil {
+		t = ref.Value
+	}
+	return t
+}
+
+// RefToTerm resolves all nested refs into ground terms, if possible.
+func RefToTerm(x Term) Term {
+	x = Deref(x)
+	if s, ok := x.(Struct); ok {
+		args := make([]Term, len(s.Args))
+		for i, arg := range s.Args {
+			args[i] = RefToTerm(arg)
+		}
+		return Struct{s.Name, args}
+	}
+	return x
+}
+
+// --- String ---
+
+var (
+	atomRE = regexp.MustCompile(`[\pLl\pN][\pL\pN_]*`)
+)
+
+func (t Atom) String() string {
+	if atomRE.MatchString(string(t)) {
+		return string(t)
+	}
+	return fmt.Sprintf("'%s'", strings.Replace(string(t), "'", "''", -1))
+}
+
+func (t Var) String() string {
+	return string(t)
+}
+
+func (t Struct) String() string {
+	terms, tail := TermToList(t)
+	if len(terms) > 0 {
+		// t is a list.
+		strs := make([]string, len(terms))
+		for i, term := range terms {
+			strs[i] = Deref(term).String()
+		}
+		if tail == Atom("[]") {
+			return fmt.Sprintf("[%s]", strings.Join(strs, ", "))
+		}
+		return fmt.Sprintf("[%s|%v]", strings.Join(strs, ", "), tail)
+	}
+	var b strings.Builder
+	fmt.Fprintf(&b, "%v(", t.Name)
+	for i, arg := range t.Args {
+		if i > 0 {
+			b.WriteString(", ")
+		}
+		b.WriteString(Deref(arg).String())
+	}
+	b.WriteRune(')')
+	return b.String()
+}
+
+func (t *Ref) String() string {
+	return fmt.Sprintf("%s@%d", t.name, t.id)
+}
