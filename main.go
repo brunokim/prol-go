@@ -75,7 +75,6 @@ var kb = prol.NewKnowledgeBase(
 	prol.DCG{
 		st("struct", st("struct", var_("Name"), var_("Args"))),
 		st("atom", st("atom", var_("Name"))),
-		st("ws"),
 		st(".", atom("("), atom("[]")),
 		st("ws"),
 		st("terms", var_("Args")),
@@ -212,7 +211,14 @@ func main() {
 		st("var", var_("Var4"), prol.StringToTerm("X1"), atom("[]")),
 		st("var", var_("Var5"), prol.StringToTerm("Foo123"), atom("[]")),
 	})
-	/*runQuery("Parsing term",
-			[]prol.Struct{st("struct", var_("Struct"), prol.ListToTerm([]prol.Term{atom("f"), atom("("), atom("a"), atom(","), atom("X"), atom(")")}, atom("[]")), atom("[]"))},
-	        "trace")*/
+	runQuery("Parsing struct", []prol.Struct{
+		st("struct", var_("Struct1"), prol.StringToTerm("f()"), atom("[]")),
+		st("struct", var_("Struct2"), prol.StringToTerm("f( )"), atom("[]")),
+		st("struct", var_("Struct3"), prol.StringToTerm("f(a)"), atom("[]")),
+		st("struct", var_("Struct4"), prol.StringToTerm("f(Z)"), atom("[]")),
+		st("struct", var_("Struct5"), prol.StringToTerm("f(g())"), atom("[]")),
+		st("struct", var_("Struct6"), prol.StringToTerm("f(b,c)"), atom("[]")),
+		st("struct", var_("Struct7"), prol.StringToTerm("f( b , c )"), atom("[]")),
+		st("struct", var_("Struct8"), prol.StringToTerm("foo(atom, Var, bar(Y,c,d))"), atom("[]")),
+	})
 }
