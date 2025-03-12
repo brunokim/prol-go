@@ -163,7 +163,7 @@ func RefToTerm(x Term) Term {
 // --- String ---
 
 var (
-	atomRE = regexp.MustCompile(`^[\p{Ll}\pN][\pL\pN_]*$`)
+	atomRE = regexp.MustCompile(`^([\p{Ll}\pN][\pL\pN_]*|\[\])$`)
 )
 
 func (t Atom) String() string {
@@ -187,6 +187,10 @@ func (t Struct) String() string {
 	commaSeparated(&b, t.Args)
 	b.WriteRune(')')
 	return b.String()
+}
+
+func (t *Ref) String() string {
+	return fmt.Sprintf("%s@%d", t.name, t.id)
 }
 
 func commaSeparated(b *strings.Builder, terms []Term) {
@@ -238,6 +242,3 @@ func listToString(terms []Term, tail Term) string {
 	return b.String()
 }
 
-func (t *Ref) String() string {
-	return fmt.Sprintf("%s@%d", t.name, t.id)
-}

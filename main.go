@@ -250,6 +250,6 @@ func main() {
 	})
 	runQuery("Assert clause", []prol.Struct{
 		st("assertz", st("clause", st("struct", atom("dummy"), atom("[]")), atom("[]"))),
-        st("dummy"),
+		st("dummy"),
 	})
 }
