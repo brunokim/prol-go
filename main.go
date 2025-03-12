@@ -251,5 +251,11 @@ func main() {
 	runQuery("Assert clause", []prol.Struct{
 		st("assertz", st("clause", st("struct", atom("dummy"), atom("[]")), atom("[]"))),
 		st("dummy"),
+		st("assertz", st("clause", st("struct", atom("f"), st(".", st("atom", atom("a123")), atom("[]"))), atom("[]"))),
+		st("assertz", st("clause", st("struct", atom("f"), st(".", st("var", atom("X123")), atom("[]"))), atom("[]"))),
+		st("assertz", st("clause", st("struct", atom("f"), st(".", st("struct", atom("g"), atom("[]")), atom("[]"))), atom("[]"))),
+		st("f", var_("X")),
+		st("assertz", st("clause", st("struct", atom("foo"), st(".", st("var", atom("X")), atom("[]"))), st(".", st("struct", atom("f"), st(".", st("var", atom("X")), atom("[]"))), atom("[]")))),
+		st("f", var_("Y")),
 	})
 }

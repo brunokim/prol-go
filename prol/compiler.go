@@ -40,11 +40,39 @@ func compileClause(ast Struct) (Rule, error) {
 
 func compileTerm(ast Struct) (Term, error) {
 	switch ast.Functor() {
+	case Functor{"atom", 1}:
+		return compileAtom(ast)
+	case Functor{"var", 1}:
+		return compileVar(ast)
 	case Functor{"struct", 2}:
 		return compileStruct(ast)
 	default:
 		return nil, fmt.Errorf("compileTerm: unimplemented term type: %v", ast.Functor())
 	}
+}
+
+func compileAtom(ast Struct) (Atom, error) {
+	if err := checkFunctor(ast, Functor{"atom", 1}); err != nil {
+		return Atom(""), err
+	}
+	arg1 := Deref(ast.Args[0])
+	name, err := checkAtom(arg1)
+	if err != nil {
+		return Atom(""), fmt.Errorf("name: %w", err)
+	}
+	return name, nil
+}
+
+func compileVar(ast Struct) (Var, error) {
+	if err := checkFunctor(ast, Functor{"var", 1}); err != nil {
+		return Var(""), err
+	}
+	arg1 := Deref(ast.Args[0])
+	name, err := checkAtom(arg1)
+	if err != nil {
+		return Var(""), fmt.Errorf("name: %w", err)
+	}
+	return NewVar(string(name))
 }
 
 func compileStruct(ast Struct) (Struct, error) {

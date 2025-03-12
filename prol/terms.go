@@ -241,4 +241,3 @@ func listToString(terms []Term, tail Term) string {
 	b.WriteRune('"')
 	return b.String()
 }
-
