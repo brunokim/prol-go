@@ -97,14 +97,21 @@ func (s Struct) Functor() Functor {
 	return Functor{s.Name, len(s.Args)}
 }
 
-// --- Conversion between term and list
+// --- Atom ---
+
+// IsChar returns whether this atom has a single char.
+func (a Atom) IsChar() bool {
+	return utf8.RuneCountInString(string(a)) == 1
+}
+
+// --- Conversion between term and list ---
 
 // TermToList unwraps a linked list of cons cells into a list of terms.
 func TermToList(t Term) (terms []Term, tail Term) {
 	s, ok := t.(Struct)
 	for ok && s.Name == "." && len(s.Args) == 2 {
 		terms = append(terms, s.Args[0])
-		t = s.Args[1]
+		t = Deref(s.Args[1])
 		s, ok = t.(Struct)
 	}
 	tail = t
@@ -118,6 +125,16 @@ func ListToTerm(terms []Term, tail Term) Term {
 		tail = Struct{".", []Term{t, tail}}
 	}
 	return tail
+}
+
+// StringToTerm converts a string to a linked list of single-char atoms.
+func StringToTerm(s string) Term {
+	runes := []rune(s)
+	terms := make([]Term, len(runes))
+	for i, r := range runes {
+		terms[i] = Atom(string(r))
+	}
+	return ListToTerm(terms, Atom("[]"))
 }
 
 // --- Ref ---
@@ -146,7 +163,7 @@ func RefToTerm(x Term) Term {
 // --- String ---
 
 var (
-	atomRE = regexp.MustCompile(`[\pLl\pN][\pL\pN_]*`)
+	atomRE = regexp.MustCompile(`^[\p{Ll}\pN][\pL\pN_]*$`)
 )
 
 func (t Atom) String() string {
@@ -164,9 +181,31 @@ func (t Struct) String() string {
 	terms, tail := TermToList(t)
 	if len(terms) > 0 {
 		// t is a list.
+		isCharList := true
+		for i := range terms {
+			terms[i] = Deref(terms[i])
+			if atom, ok := terms[i].(Atom); !(ok && atom.IsChar()) {
+				isCharList = false
+			}
+		}
+		if isCharList && tail == Atom("[]") {
+			// t is a proper char list.
+			var b strings.Builder
+			b.WriteRune('"')
+			for _, term := range terms {
+				atom := string(term.(Atom))
+				if atom[0] == '"' {
+					b.WriteString(`""`)
+				} else {
+					b.WriteString(atom)
+				}
+			}
+			b.WriteRune('"')
+			return b.String()
+		}
 		strs := make([]string, len(terms))
 		for i, term := range terms {
-			strs[i] = Deref(term).String()
+			strs[i] = term.String()
 		}
 		if tail == Atom("[]") {
 			return fmt.Sprintf("[%s]", strings.Join(strs, ", "))

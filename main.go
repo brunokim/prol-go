@@ -41,7 +41,6 @@ var kb = prol.NewKnowledgeBase(
 		st("phrase", var_("Goal"), var_("List"), var_("Rest")),
 		st("call", var_("Goal"), var_("List"), var_("Rest")),
 	},
-	prol.Clause{st("=", var_("X"), var_("X"))},
 	prol.Clause{
 		st("member", var_("Elem"), st(".", var_("H"), var_("T"))),
 		st("member_", var_("T"), var_("Elem"), var_("H")),
@@ -77,11 +76,11 @@ var kb = prol.NewKnowledgeBase(
 		st("struct", st("struct", var_("Name"), var_("Args"))),
 		st("atom", st("atom", var_("Name"))),
 		st("ws"),
-		st(".", atom("'('"), atom("[]")),
+		st(".", atom("("), atom("[]")),
 		st("ws"),
 		st("terms", var_("Args")),
 		st("ws"),
-		st(".", atom("')'"), atom("[]")),
+		st(".", atom(")"), atom("[]")),
 	},
 	prol.DCG{
 		st("struct", st("struct", var_("Name"), atom("[]"))),
@@ -146,7 +145,7 @@ var kb = prol.NewKnowledgeBase(
 
 func init() {
 	for ch := 'A'; ch <= 'Z'; ch++ {
-		kb.Assert(prol.Clause{st("upper", atom(fmt.Sprintf("'%c'", ch)))})
+		kb.Assert(prol.Clause{st("upper", atom(string(ch)))})
 	}
 	for ch := 'a'; ch <= 'z'; ch++ {
 		kb.Assert(prol.Clause{st("lower", atom(string(ch)))})
@@ -156,12 +155,24 @@ func init() {
 	}
 }
 
-func runQuery(title string, limit int, query ...prol.Struct) {
+func runQuery(title string, query []prol.Struct, opts ...any) {
+	limit := -1
+	var solveOpts []any
+	for i := 0; i < len(opts); {
+		switch opts[i] {
+		case "limit":
+			limit = opts[i+1].(int)
+			i += 2
+		default:
+			solveOpts = append(solveOpts, opts[i])
+			i += 1
+		}
+	}
 	fmt.Println("%", title)
 	cnt := 1
 	q := prol.Clause(append([]prol.Struct{st("query")}, query...))
 	fmt.Println(q)
-	for solution := range kb.Solve(q) {
+	for solution := range kb.Solve(q, solveOpts...) {
 		fmt.Println(solution)
 		if cnt >= limit && limit >= 0 {
 			break
@@ -174,16 +185,34 @@ func runQuery(title string, limit int, query ...prol.Struct) {
 func main() {
 	fmt.Println(kb)
 	fmt.Println()
-	runQuery("First 5 natural numbers", 5,
-		st("nat", var_("X")))
-	runQuery("All combinations of two numbers that sum to 3", -1,
-		st("add", var_("X"), var_("Y"), st("s", st("s", st("s", atom("0"))))))
-	runQuery("All combinations of three numbers that sum to 5", -1,
+	runQuery("First 5 natural numbers",
+		[]prol.Struct{st("nat", var_("X"))},
+		"limit", 5)
+	runQuery("All combinations of two numbers that sum to 3",
+		[]prol.Struct{st("add", var_("X"), var_("Y"), st("s", st("s", st("s", atom("0")))))})
+	runQuery("All combinations of three numbers that sum to 5", []prol.Struct{
 		st("add", var_("_Tmp"), var_("Z"), st("s", st("s", st("s", st("s", st("s", atom("0"))))))),
 		st("add", var_("X"), var_("Y"), var_("_Tmp")),
-	)
-	runQuery("First 5 lists with 'a'", 5,
-		st("member", atom("a"), var_("List")))
-	runQuery("Parsing term", -1,
-		st("struct", var_("Struct"), prol.ListToTerm([]prol.Term{atom("f"), atom("("), atom("a"), atom(","), atom("X"), atom(")")}, atom("[]")), atom("[]")))
+	})
+	runQuery("First 5 lists with 'a'",
+		[]prol.Struct{st("member", atom("a"), var_("List"))},
+		"limit", 5)
+	runQuery("Parsing atom", []prol.Struct{
+		st("atom", var_("Atom1"), prol.StringToTerm("a"), atom("[]")),
+		st("atom", var_("Atom2"), prol.StringToTerm("ab"), atom("[]")),
+		st("atom", var_("Atom3"), prol.StringToTerm("a1"), atom("[]")),
+		st("atom", var_("Atom4"), prol.StringToTerm("aX"), atom("[]")),
+		st("atom", var_("Atom5"), prol.StringToTerm("a_"), atom("[]")),
+		st("atom", var_("Atom6"), prol.StringToTerm("foo_123"), atom("[]")),
+	})
+	runQuery("Parsing var", []prol.Struct{
+		st("var", var_("Var1"), prol.StringToTerm("X"), atom("[]")),
+		st("var", var_("Var2"), prol.StringToTerm("Y"), atom("[]")),
+		st("var", var_("Var3"), prol.StringToTerm("Xa"), atom("[]")),
+		st("var", var_("Var4"), prol.StringToTerm("X1"), atom("[]")),
+		st("var", var_("Var5"), prol.StringToTerm("Foo123"), atom("[]")),
+	})
+	/*runQuery("Parsing term",
+			[]prol.Struct{st("struct", var_("Struct"), prol.ListToTerm([]prol.Term{atom("f"), atom("("), atom("a"), atom(","), atom("X"), atom(")")}, atom("[]")), atom("[]"))},
+	        "trace")*/
 }

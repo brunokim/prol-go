@@ -20,12 +20,23 @@ type solver struct {
 	env   map[Var]*Ref
 	trail []*Ref
 	yield func(Solution) bool
+	trace bool
 }
 
-func (kb *KnowledgeBase) Solve(query Clause) iter.Seq[Solution] {
+func (kb *KnowledgeBase) Solve(query Clause, opts ...any) iter.Seq[Solution] {
 	env := make(map[Var]*Ref)
 	query = varToRef(query, env).(Clause)
-	s := solver{kb: kb, env: env}
+	s := &solver{kb: kb, env: env}
+	for i := 0; i < len(opts); {
+		switch opts[i] {
+		case "trace":
+			s.trace = true
+			i += 1
+		default:
+			log.Println("KnowledgeBase.Solve: unknown option at %d: %v", i, opts[i])
+			i += 1
+		}
+	}
 	return func(yield func(Solution) bool) {
 		s.yield = yield
 		s.dfs(query)
@@ -44,6 +55,9 @@ func (s *solver) dfs(goals []Struct) bool {
 		return s.yield(m)
 	}
 	goal, rest := goals[0], goals[1:]
+	if s.trace {
+		log.Println(">>> goal:", goal)
+	}
 	if !s.kb.PredicateExists(goal) {
 		log.Printf("predicate does not exist for goal: %v", goal.Functor())
 		return false
@@ -61,11 +75,17 @@ func (s *solver) dfs(goals []Struct) bool {
 		}
 		s.trail = s.trail[:n]
 	}
+	if s.trace {
+		log.Println("<<< backtrack")
+	}
 	return true
 }
 
 func (s *solver) Unify(t1, t2 Term) bool {
 	t1, t2 = Deref(t1), Deref(t2)
+	if s.trace {
+		log.Println("=== unify", t1, t2)
+	}
 	s1, isStruct1 := t1.(Struct)
 	s2, isStruct2 := t2.(Struct)
 	if isStruct1 && isStruct2 {
@@ -83,16 +103,21 @@ func (s *solver) Unify(t1, t2 Term) bool {
 		return true
 	}
 	if ref1, ok := t1.(*Ref); ok {
-		ref1.Value = t2
-		s.trail = append(s.trail, ref1)
-		return true
+		return s.bind(ref1, t2)
 	}
 	if ref2, ok := t2.(*Ref); ok {
-		ref2.Value = t1
-		s.trail = append(s.trail, ref2)
-		return true
+		return s.bind(ref2, t1)
 	}
 	return false
+}
+
+func (s *solver) bind(ref *Ref, t Term) bool {
+	if s.trace {
+		log.Println("::: bind ", ref, t)
+	}
+	ref.Value = t
+	s.trail = append(s.trail, ref)
+	return true
 }
 
 // --- String ---

@@ -5,6 +5,11 @@ import (
 	"strings"
 )
 
+func equalsBuiltin(s Solver, goal Struct) ([]Struct, bool) {
+	arg1, arg2 := goal.Args[0], goal.Args[1]
+	return nil, s.Unify(arg1, arg2)
+}
+
 func atomBuiltin(s Solver, goal Struct) ([]Struct, bool) {
 	term := Deref(goal.Args[0])
 	_, ok := term.(Atom)
@@ -18,7 +23,7 @@ func varBuiltin(s Solver, goal Struct) ([]Struct, bool) {
 }
 
 func atomToCharsBuiltin(s Solver, goal Struct) ([]Struct, bool) {
-	arg1, arg2 := Deref(goal.Args[0]), Deref(goal.Args[1])
+	arg1 := Deref(goal.Args[0])
 	atom, ok := arg1.(Atom)
 	if !ok {
 		log.Printf("atom->chars/2: arg #1: not an atom: %v", arg1)
@@ -29,36 +34,37 @@ func atomToCharsBuiltin(s Solver, goal Struct) ([]Struct, bool) {
 		chars[i] = Atom(string(ch))
 	}
 	term := ListToTerm(chars, Atom("[]"))
-	return nil, s.Unify(term, arg2)
+	return nil, s.Unify(term, goal.Args[1])
 }
 
 func charsToAtomBuiltin(s Solver, goal Struct) ([]Struct, bool) {
-	arg1, arg2 := Deref(goal.Args[0]), Deref(goal.Args[1])
-	chars, tail := TermToList(arg2)
+	arg1 := Deref(goal.Args[0])
+	chars, tail := TermToList(arg1)
 	if tail != Atom("[]") {
-		log.Printf("atom->chars/2: arg #2: not a proper list: %v", arg2)
+		log.Printf("chars->atom/2: arg #1: not a proper list: %v", arg1)
 		return nil, false
 	}
 	var b strings.Builder
 	for _, ch := range chars {
-		b.WriteString(string(ch.(Atom)))
+		b.WriteString(string(Deref(ch).(Atom)))
 	}
 	atom := Atom(b.String())
-	return nil, s.Unify(arg1, atom)
+	return nil, s.Unify(atom, goal.Args[1])
 }
 
 func atomLengthBuiltin(s Solver, goal Struct) ([]Struct, bool) {
-	arg1, arg2 := Deref(goal.Args[0]), Deref(goal.Args[1])
+	arg1 := Deref(goal.Args[0])
 	atom, ok := arg1.(Atom)
 	if !ok {
 		log.Printf("atom_length/2: arg #1: not an atom: %v", arg1)
 		return nil, false
 	}
-	length := Atom(string(len(atom)))
-	return nil, s.Unify(length, arg2)
+	length := Atom(string(len(atom) + '0'))
+	return nil, s.Unify(length, goal.Args[1])
 }
 
 var builtins = []Builtin{
+	Builtin{Functor{"=", 2}, equalsBuiltin},
 	Builtin{Functor{"atom", 1}, atomBuiltin},
 	Builtin{Functor{"var", 1}, varBuiltin},
 	Builtin{Functor{"atom->chars", 2}, atomToCharsBuiltin},
