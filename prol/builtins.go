@@ -63,6 +63,17 @@ func atomLengthBuiltin(s Solver, goal Struct) ([]Struct, bool) {
 	return nil, s.Unify(length, goal.Args[1])
 }
 
+func assertzBuiltin(s Solver, goal Struct) ([]Struct, bool) {
+	arg1 := Deref(goal.Args[0])
+	clause, err := compileRule(arg1)
+	if err != nil {
+		log.Printf("assertz/1: %v", err)
+		return nil, false
+	}
+	s.Assert(clause)
+	return nil, true
+}
+
 var builtins = []Builtin{
 	Builtin{Functor{"=", 2}, equalsBuiltin},
 	Builtin{Functor{"atom", 1}, atomBuiltin},
@@ -70,4 +81,5 @@ var builtins = []Builtin{
 	Builtin{Functor{"atom->chars", 2}, atomToCharsBuiltin},
 	Builtin{Functor{"chars->atom", 2}, charsToAtomBuiltin},
 	Builtin{Functor{"atom_length", 2}, atomLengthBuiltin},
+	Builtin{Functor{"assertz", 1}, assertzBuiltin},
 }

@@ -34,14 +34,6 @@ var kb = prol.NewKnowledgeBase(
 		st("add", var_("A"), var_("B"), var_("C")),
 	},
 	prol.Clause{
-		st("phrase", var_("Goal"), var_("List")),
-		st("phrase", var_("Goal"), var_("List"), atom("[]")),
-	},
-	prol.Clause{
-		st("phrase", var_("Goal"), var_("List"), var_("Rest")),
-		st("call", var_("Goal"), var_("List"), var_("Rest")),
-	},
-	prol.Clause{
 		st("member", var_("Elem"), st(".", var_("H"), var_("T"))),
 		st("member_", var_("T"), var_("Elem"), var_("H")),
 	},
@@ -69,6 +61,34 @@ var kb = prol.NewKnowledgeBase(
 		st("is_char_list", var_("Chars")),
 	},
 	// Prolog parser.
+	prol.DCG{
+		st("clause", st("clause", var_("Head"), var_("Body"))),
+		st("struct", var_("Head")),
+		st("ws"),
+		prol.StringToTerm(":-").(prol.Struct),
+		st("ws"),
+		st("structs", var_("Body")),
+		st("ws"),
+		st(".", atom("."), atom("[]")),
+	},
+	prol.DCG{
+		st("clause", st("clause", var_("Head"), atom("[]"))),
+		st("struct", var_("Head")),
+		st("ws"),
+		st(".", atom("."), atom("[]")),
+	},
+	prol.DCG{
+		st("structs", st(".", var_("Struct"), var_("Structs"))),
+		st("struct", var_("Struct")),
+		st("ws"),
+		st(".", atom(","), atom("[]")),
+		st("ws"),
+		st("structs", var_("Structs")),
+	},
+	prol.DCG{
+		st("structs", st(".", var_("Struct"), atom("[]"))),
+		st("struct", var_("Struct")),
+	},
 	prol.DCG{st("term", var_("Term")), st("struct", var_("Term"))},
 	prol.DCG{st("term", var_("Term")), st("atom", var_("Term"))},
 	prol.DCG{st("term", var_("Term")), st("var", var_("Term"))},
@@ -220,5 +240,16 @@ func main() {
 		st("struct", var_("Struct6"), prol.StringToTerm("f(b,c)"), atom("[]")),
 		st("struct", var_("Struct7"), prol.StringToTerm("f( b , c )"), atom("[]")),
 		st("struct", var_("Struct8"), prol.StringToTerm("foo(atom, Var, bar(Y,c,d))"), atom("[]")),
+	})
+	runQuery("Parsing clause", []prol.Struct{
+		st("clause", var_("Clause1"), prol.StringToTerm("f()."), atom("[]")),
+		st("clause", var_("Clause2"), prol.StringToTerm("f(a)."), atom("[]")),
+		st("clause", var_("Clause3"), prol.StringToTerm("f(a):-g()."), atom("[]")),
+		st("clause", var_("Clause4"), prol.StringToTerm("f(a):-g(),h()."), atom("[]")),
+		st("clause", var_("Clause4"), prol.StringToTerm("f(a) :-\n  g(),\n  h()."), atom("[]")),
+	})
+	runQuery("Assert clause", []prol.Struct{
+		st("assertz", st("clause", st("struct", atom("dummy"), atom("[]")), atom("[]"))),
+        st("dummy"),
 	})
 }

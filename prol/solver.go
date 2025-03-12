@@ -10,6 +10,7 @@ import (
 )
 
 type Solver interface {
+	Assert(rule Rule)
 	Unify(t1, t2 Term) bool
 }
 
@@ -21,6 +22,10 @@ type solver struct {
 	trail []*Ref
 	yield func(Solution) bool
 	trace bool
+}
+
+func (s *solver) Assert(rule Rule) {
+	s.kb.Assert(rule)
 }
 
 func (kb *KnowledgeBase) Solve(query Clause, opts ...any) iter.Seq[Solution] {

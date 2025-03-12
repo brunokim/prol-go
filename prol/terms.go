@@ -180,47 +180,61 @@ func (t Var) String() string {
 func (t Struct) String() string {
 	terms, tail := TermToList(t)
 	if len(terms) > 0 {
-		// t is a list.
-		isCharList := true
-		for i := range terms {
-			terms[i] = Deref(terms[i])
-			if atom, ok := terms[i].(Atom); !(ok && atom.IsChar()) {
-				isCharList = false
-			}
-		}
-		if isCharList && tail == Atom("[]") {
-			// t is a proper char list.
-			var b strings.Builder
-			b.WriteRune('"')
-			for _, term := range terms {
-				atom := string(term.(Atom))
-				if atom[0] == '"' {
-					b.WriteString(`""`)
-				} else {
-					b.WriteString(atom)
-				}
-			}
-			b.WriteRune('"')
-			return b.String()
-		}
-		strs := make([]string, len(terms))
-		for i, term := range terms {
-			strs[i] = term.String()
-		}
-		if tail == Atom("[]") {
-			return fmt.Sprintf("[%s]", strings.Join(strs, ", "))
-		}
-		return fmt.Sprintf("[%s|%v]", strings.Join(strs, ", "), tail)
+		return listToString(terms, tail)
 	}
 	var b strings.Builder
 	fmt.Fprintf(&b, "%v(", t.Name)
-	for i, arg := range t.Args {
+	commaSeparated(&b, t.Args)
+	b.WriteRune(')')
+	return b.String()
+}
+
+func commaSeparated(b *strings.Builder, terms []Term) {
+	for i, term := range terms {
 		if i > 0 {
 			b.WriteString(", ")
 		}
-		b.WriteString(Deref(arg).String())
+		b.WriteString(Deref(term).String())
 	}
-	b.WriteRune(')')
+}
+
+func listToString(terms []Term, tail Term) string {
+	var b strings.Builder
+	// Not a proper list.
+	if tail != Atom("[]") {
+		b.WriteRune('[')
+		commaSeparated(&b, terms)
+		b.WriteRune('|')
+		b.WriteString(tail.String())
+		b.WriteRune(']')
+		return b.String()
+	}
+	// Deref all terms and check if it is a char list.
+	isCharList := true
+	for i := range terms {
+		terms[i] = Deref(terms[i])
+		if atom, ok := terms[i].(Atom); !(ok && atom.IsChar()) {
+			isCharList = false
+		}
+	}
+	// t is an ordinary list.
+	if !isCharList {
+		b.WriteRune('[')
+		commaSeparated(&b, terms)
+		b.WriteRune(']')
+		return b.String()
+	}
+	// t is a proper char list.
+	b.WriteRune('"')
+	for _, term := range terms {
+		atom := string(term.(Atom))
+		if atom[0] == '"' {
+			b.WriteString(`""`)
+		} else {
+			b.WriteString(atom)
+		}
+	}
+	b.WriteRune('"')
 	return b.String()
 }
 
