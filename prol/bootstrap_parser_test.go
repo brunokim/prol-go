@@ -25,7 +25,9 @@ func TestBootstrapParsesItself(t *testing.T) {
 		prol.Struct{"atom_chars_", []prol.Term{
 			prol.Atom(bootstrap), prol.MustVar("_Chars")}},
 		prol.Struct{"database_", []prol.Term{
-			prol.MustVar("Rules"), prol.MustVar("_Chars"), prol.MustVar("Rest")}},
+			prol.MustVar("Rules"), prol.MustVar("_Chars"), prol.MustVar("_Rest0")}},
+		prol.Struct{"ws_", []prol.Term{
+			prol.MustVar("_Rest0"), prol.MustVar("Rest")}},
 	}
 	next, stop := iter.Pull(kb.Solve(query, "max_depth", len(bootstrap)*10))
 	defer stop()
@@ -46,7 +48,10 @@ func TestBootstrapParsesItself(t *testing.T) {
 		}
 	}
 	rest, _ := prol.TermToList(solution["Rest"])
-	t.Log(rest[:min(len(rest), 50)])
+	if len(rest) > 0 {
+		t.Errorf("trailing characters: %v", rest[:min(len(rest), 50)])
+		return
+	}
 	compiledKB := prol.NewKnowledgeBase(rules...)
 	exporter := func(typ reflect.Type) bool {
 		return (typ == reflect.TypeOf(prol.KnowledgeBase{}))
