@@ -59,7 +59,7 @@ func atomLengthBuiltin(s Solver, goal Struct) ([]Struct, bool) {
 		log.Printf("atom_length/2: arg #1: not an atom: %v", arg1)
 		return nil, false
 	}
-	length := Atom(string(len(atom) + '0'))
+	length := Atom(string([]rune{rune(len(atom) + '0')}))
 	return nil, s.Unify(length, goal.Args[1])
 }
 
@@ -80,6 +80,8 @@ var builtins = []Builtin{
 	Builtin{Functor{"var", 1}, varBuiltin},
 	Builtin{Functor{"atom->chars", 2}, atomToCharsBuiltin},
 	Builtin{Functor{"chars->atom", 2}, charsToAtomBuiltin},
+	Builtin{Functor{"atom_to_chars", 2}, atomToCharsBuiltin},
+	Builtin{Functor{"chars_to_atom", 2}, charsToAtomBuiltin},
 	Builtin{Functor{"atom_length", 2}, atomLengthBuiltin},
 	Builtin{Functor{"assertz", 1}, assertzBuiltin},
 }

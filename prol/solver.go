@@ -21,7 +21,10 @@ type solver struct {
 	env   map[Var]*Ref
 	trail []*Ref
 	yield func(Solution) bool
-	trace bool
+	// Opts
+	trace     bool
+	depth     int
+	max_depth int
 }
 
 func (s *solver) Assert(rule Rule) {
@@ -37,8 +40,11 @@ func (kb *KnowledgeBase) Solve(query Clause, opts ...any) iter.Seq[Solution] {
 		case "trace":
 			s.trace = true
 			i += 1
+		case "max_depth":
+			s.max_depth = opts[i+1].(int)
+			i += 2
 		default:
-			log.Println("KnowledgeBase.Solve: unknown option at %d: %v", i, opts[i])
+			log.Printf("KnowledgeBase.Solve: unknown option at %d: %v\n", i, opts[i])
 			i += 1
 		}
 	}
@@ -61,7 +67,13 @@ func (s *solver) dfs(goals []Struct) bool {
 	}
 	goal, rest := goals[0], goals[1:]
 	if s.trace {
-		log.Println(">>> goal:", goal)
+		log.Println(">>> goal:", goal.Functor())
+	}
+	s.depth++
+	defer func() { s.depth-- }()
+	if s.max_depth > 0 && s.depth > s.max_depth {
+		log.Println("max depth reached")
+		return false
 	}
 	if !s.kb.PredicateExists(goal) {
 		log.Printf("predicate does not exist for goal: %v", goal.Functor())

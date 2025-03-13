@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/brunokim/prol-go/prol"
 )
@@ -202,6 +203,13 @@ func runQuery(title string, query []prol.Struct, opts ...any) {
 }
 
 func main() {
+	bootstrap, err := prol.Bootstrap()
+	fmt.Println(bootstrap)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return
 	fmt.Println(kb)
 	fmt.Println()
 	runQuery("First 5 natural numbers",
