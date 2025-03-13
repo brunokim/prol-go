@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-func compileRule(ast Term) (Rule, error) {
+func CompileRule(ast Term) (Rule, error) {
 	ruleAST, err := checkStruct(ast)
 	if err != nil {
 		return nil, fmt.Errorf("compileRule: %w", err)

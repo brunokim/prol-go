@@ -65,7 +65,7 @@ func atomLengthBuiltin(s Solver, goal Struct) ([]Struct, bool) {
 
 func assertzBuiltin(s Solver, goal Struct) ([]Struct, bool) {
 	arg1 := Deref(goal.Args[0])
-	clause, err := compileRule(arg1)
+	clause, err := CompileRule(arg1)
 	if err != nil {
 		log.Printf("assertz/1: %v", err)
 		return nil, false

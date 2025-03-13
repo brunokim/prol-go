@@ -119,7 +119,7 @@ func (p *parser) term() (Term, bool) {
 	p.ws()
 	if p.match(`\)`) {
 		// Empty struct
-		return Struct{atom, nil}, true
+		return Struct{atom, []Term{}}, true
 	}
 	args, ok := p.terms()
 	if !ok {
