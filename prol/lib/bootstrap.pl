@@ -2,16 +2,16 @@ query().
 
 atom_chars_(Atom, Chars) :-
   var(Atom),
-  is_char_list_(Chars),
+  is_char_list(Chars),
   chars_to_atom(Chars, Atom).
 atom_chars_(Atom, Chars) :-
   atom(Atom),
   atom_to_chars(Atom, Chars).
 
-is_char_list_(\.(Char, Chars)) :-
+is_char_list(\.(Char, Chars)) :-
   atom_length(Char, 1),
-  is_char_list_(Chars).
-is_char_list_([]).
+  is_char_list(Chars).
+is_char_list([]).
 
 database_(\.(Rule, Rules), L0, L) :-
   rule_(Rule, L0, L1),
