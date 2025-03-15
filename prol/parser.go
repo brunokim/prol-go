@@ -53,6 +53,7 @@ func (kb *KnowledgeBase) Interpret(text string, opts ...any) error {
 		}
 		chars = solution[rest]
 	}
+	fmt.Println("--- finished asserts ---")
 	solution, err := kb.FirstSolution(Clause{
 		Struct{"query", nil},
 		Struct{"ws_", []Term{chars, rest}}}, opts...)

@@ -11,7 +11,10 @@ import (
 
 type Solver interface {
 	Assert(rule Rule)
+	RetractIndex(f Functor, i int) bool
+	MoveClauseInPredicate(f Functor, from int, to int) bool
 	Unify(t1, t2 Term) bool
+	Unwind() func() bool
 }
 
 type Solution map[Var]Term
@@ -29,6 +32,14 @@ type solver struct {
 
 func (s *solver) Assert(rule Rule) {
 	s.kb.Assert(rule)
+}
+
+func (s *solver) RetractIndex(f Functor, i int) bool {
+	return s.kb.RetractIndex(f, i)
+}
+
+func (s *solver) MoveClauseInPredicate(f Functor, from int, to int) bool {
+	return s.kb.MoveClauseInPredicate(f, from, to)
 }
 
 func (kb *KnowledgeBase) Solve(query Clause, opts ...any) iter.Seq[Solution] {
@@ -66,6 +77,7 @@ func (s *solver) dfs(goals []Struct) bool {
 		return s.yield(m)
 	}
 	goal, rest := goals[0], goals[1:]
+	// log.Println(">>> goal:", goal.Functor())
 	if s.trace {
 		log.Println(">>> goal:", goal.Functor())
 	}
@@ -79,7 +91,7 @@ func (s *solver) dfs(goals []Struct) bool {
 		log.Printf("predicate does not exist for goal: %v", goal.Functor())
 		return false
 	}
-	n := len(s.trail)
+	unwind := s.Unwind()
 	for rule := range s.kb.Matching(goal) {
 		body, ok := rule.Unify(s, goal)
 		if ok {
@@ -87,15 +99,26 @@ func (s *solver) dfs(goals []Struct) bool {
 				return false
 			}
 		}
-		for _, ref := range s.trail[n:] {
-			ref.Value = nil
-		}
-		s.trail = s.trail[:n]
+		unwind()
 	}
 	if s.trace {
 		log.Println("<<< backtrack")
 	}
 	return true
+}
+
+func (s *solver) Unwind() func() bool {
+	n := len(s.trail)
+	return func() bool {
+		if len(s.trail) == n {
+			return false
+		}
+		for _, ref := range s.trail[n:] {
+			ref.Value = nil
+		}
+		s.trail = s.trail[:n]
+		return true
+	}
 }
 
 func (s *solver) Unify(t1, t2 Term) bool {
