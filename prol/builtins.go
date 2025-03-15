@@ -1,8 +1,8 @@
 package prol
 
 import (
+	"fmt"
 	"log"
-	"strings"
 )
 
 func equalsBuiltin(s Solver, goal Struct) ([]Struct, bool) {
@@ -39,17 +39,12 @@ func atomToCharsBuiltin(s Solver, goal Struct) ([]Struct, bool) {
 
 func charsToAtomBuiltin(s Solver, goal Struct) ([]Struct, bool) {
 	arg1 := Deref(goal.Args[0])
-	chars, tail := TermToList(arg1)
-	if tail != Atom("[]") {
-		log.Printf("chars->atom/2: arg #1: not a proper list: %v", arg1)
+	text, err := TermToString(arg1)
+	if err != nil {
+		log.Printf("chars->atom/2: arg #1: %v", err)
 		return nil, false
 	}
-	var b strings.Builder
-	for _, ch := range chars {
-		b.WriteString(string(Deref(ch).(Atom)))
-	}
-	atom := Atom(b.String())
-	return nil, s.Unify(atom, goal.Args[1])
+	return nil, s.Unify(Atom(text), goal.Args[1])
 }
 
 func atomLengthBuiltin(s Solver, goal Struct) ([]Struct, bool) {
@@ -70,7 +65,14 @@ func assertzBuiltin(s Solver, goal Struct) ([]Struct, bool) {
 		log.Printf("assertz/1: %v", err)
 		return nil, false
 	}
+	log.Println("asserting\n", clause)
 	s.Assert(clause)
+	return nil, true
+}
+
+func printBuiltin(s Solver, goal Struct) ([]Struct, bool) {
+	arg1 := Deref(goal.Args[0])
+	fmt.Println(arg1)
 	return nil, true
 }
 
@@ -84,4 +86,5 @@ var builtins = []Builtin{
 	Builtin{Functor{"chars_to_atom", 2}, charsToAtomBuiltin},
 	Builtin{Functor{"atom_length", 2}, atomLengthBuiltin},
 	Builtin{Functor{"assertz", 1}, assertzBuiltin},
+	Builtin{Functor{"print", 1}, printBuiltin},
 }

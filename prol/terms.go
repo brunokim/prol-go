@@ -137,6 +137,23 @@ func StringToTerm(s string) Term {
 	return ListToTerm(terms, Atom("[]"))
 }
 
+// TermToString converts an atom list term to a Go string.
+func TermToString(t Term) (string, error) {
+	chars, tail := TermToList(t)
+	if tail != Atom("[]") {
+		return "", fmt.Errorf("not a proper list: %v", t)
+	}
+	var b strings.Builder
+	for i, ch := range chars {
+		atom, ok := Deref(ch).(Atom)
+		if !ok {
+			return "", fmt.Errorf("item #%d is not an atom", i)
+		}
+		b.WriteString(string(atom))
+	}
+	return b.String(), nil
+}
+
 // --- Ref ---
 
 // Deref walks the chain of references until finding a non-ref term, or unbound ref.

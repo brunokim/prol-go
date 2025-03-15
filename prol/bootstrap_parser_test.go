@@ -2,7 +2,6 @@ package prol_test
 
 import (
 	_ "embed"
-	"iter"
 	"reflect"
 	"testing"
 
@@ -20,21 +19,16 @@ func TestBootstrapParsesItself(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	_chars, _rest0 := prol.MustVar("_Chars"), prol.MustVar("_Rest0")
 	query := prol.Clause{
 		prol.Struct{"query", nil},
-		prol.Struct{"atom_chars_", []prol.Term{
-			prol.Atom(bootstrap), prol.MustVar("_Chars")}},
-		prol.Struct{"database_", []prol.Term{
-			prol.MustVar("Rules"), prol.MustVar("_Chars"), prol.MustVar("_Rest0")}},
-		prol.Struct{"ws_", []prol.Term{
-			prol.MustVar("_Rest0"), prol.MustVar("Rest")}},
+		prol.Struct{"atom_chars_", []prol.Term{prol.Atom(bootstrap), _chars}},
+		prol.Struct{"database_", []prol.Term{prol.MustVar("Rules"), _chars, _rest0}},
+		prol.Struct{"ws_", []prol.Term{_rest0, prol.MustVar("Rest")}},
 	}
-	next, stop := iter.Pull(kb.Solve(query, "max_depth", len(bootstrap)*10))
-	defer stop()
-	solution, ok := next()
-	if !ok {
-		t.Errorf("Expecting at least one solution, found none")
-		return
+	solution, err := kb.FirstSolution(query, "max_depth", len(bootstrap)*10)
+	if err != nil {
+		t.Fatal(err)
 	}
 	rulesAST, _ := prol.TermToList(solution["Rules"])
 	var rules []prol.Rule
@@ -61,5 +55,26 @@ func TestBootstrapParsesItself(t *testing.T) {
 		cmpopts.IgnoreUnexported(prol.Builtin{}))
 	if diff != "" {
 		t.Errorf("difference between compilers (-want, +got):\n%s", diff)
+	}
+}
+
+func TestPreludeBuilds(t *testing.T) {
+	kb, err := prol.Prelude()
+	if err != nil {
+		t.Fatal(err)
+	}
+	solution, err := kb.FirstSolution(prol.Clause{
+		prol.Struct{"query", nil},
+		prol.Struct{"test_atom_", []prol.Term{prol.MustVar("Atom")}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	term := prol.Deref(solution["Atom"])
+	atom, ok := term.(prol.Atom)
+	if !ok {
+		t.Errorf("not an atom: %v", term)
+	} else if atom != "with nested -->'<-- single quotes" {
+		t.Errorf("got: %s", atom)
 	}
 }
