@@ -9,6 +9,7 @@ import (
 type Rule interface {
 	isRule()
 	Indicator() Indicator
+	ToAST() Term
 	Unify(s Solver, goal Struct) (body []Struct, ok bool)
 }
 
@@ -86,6 +87,28 @@ func (c DCG) Indicator() Indicator {
 
 func (c Builtin) Indicator() Indicator {
 	return c.indicator
+}
+
+// --- ToAST ---
+
+func (c Clause) ToAST() Term {
+	bodyAST := make([]Term, len(c)-1)
+	for i, goal := range c[1:] {
+		bodyAST[i] = goal.ToAST()
+	}
+	return Struct{"clause", []Term{c[0].ToAST(), FromList(bodyAST)}}
+}
+
+func (c DCG) ToAST() Term {
+	bodyAST := make([]Term, len(c)-1)
+	for i, goal := range c[1:] {
+		bodyAST[i] = goal.ToAST()
+	}
+	return Struct{"clause", []Term{c[0].ToAST(), FromList(bodyAST)}}
+}
+
+func (c Builtin) ToAST() Term {
+	return Struct{"builtin", []Term{c.indicator.ToAST()}}
 }
 
 // --- Unify ---

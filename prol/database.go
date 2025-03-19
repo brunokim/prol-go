@@ -108,6 +108,7 @@ func (db *Database) Interpret(text string, opts ...any) error {
 // --- Solver ---
 
 type Solver interface {
+	GetPredicate(ind Indicator) []Rule
 	Assert(rule Rule)
 	Unify(t1, t2 Term) bool
 	Unwind() func() bool
@@ -145,6 +146,10 @@ func (s *solver) readOpts(opts []any) {
 			i += 1
 		}
 	}
+}
+
+func (s *solver) GetPredicate(ind Indicator) []Rule {
+	return s.db.index0[ind]
 }
 
 func (s *solver) Assert(rule Rule) {

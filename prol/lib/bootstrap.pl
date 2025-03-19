@@ -96,10 +96,7 @@ var(var(Name), L0, L) :-
 int(int(Int), L0, L) :-
   \=(L0, \.(Char, L1)),
   ascii_digit(Char),
-  print(int),
-  print(Char),
   digits(Chars, L1, L),
-  print(Chars),
   int_chars(Int, \.(Char, Chars)).
 
 ident_chars(\.(Char, Chars), L0, L) :-

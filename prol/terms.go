@@ -13,6 +13,7 @@ import (
 // Term represents a logic term in Prolog.
 type Term interface {
 	isTerm()
+	ToAST() Struct
 	fmt.Stringer
 }
 
@@ -99,6 +100,36 @@ func (f Indicator) String() string {
 
 func (s Struct) Indicator() Indicator {
 	return Indicator{s.Name, len(s.Args)}
+}
+
+// --- ToAST ---
+
+func (a Atom) ToAST() Struct {
+	return Struct{"atom", []Term{a}}
+}
+
+func (i Int) ToAST() Struct {
+	return Struct{"int", []Term{i}}
+}
+
+func (v Var) ToAST() Struct {
+	return Struct{"var", []Term{Atom(v)}}
+}
+
+func (s Struct) ToAST() Struct {
+	args := make([]Term, len(s.Args)+1)
+	for i, arg := range s.Args {
+		args[i] = arg.ToAST()
+	}
+	return Struct{"struct", []Term{s.Name, FromList(args)}}
+}
+
+func (x *Ref) ToAST() Struct {
+	return Struct{"ref", []Term{x.name.ToAST(), Int(x.id)}}
+}
+
+func (ind Indicator) ToAST() Struct {
+	return Struct{"indicator", []Term{ind.Name, Int(ind.Arity)}}
 }
 
 // --- Atom ---

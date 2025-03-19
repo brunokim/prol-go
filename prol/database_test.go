@@ -100,6 +100,37 @@ func TestSolve(t *testing.T) {
 				{"X": int_(1)},
 			},
 		},
+		{
+			"Clause reflection",
+			clause(s("query"),
+				s("get_predicate", s("indicator", a("add"), int_(3)), v("Clauses"))),
+			nil,
+			[]prol.Solution{
+				{"Clauses": fromList(
+					s("clause",
+						s("struct", a("add"),
+							fromList(
+								s("atom", a("0")),
+								s("var", a("X")),
+								s("var", a("X")),
+								nil)),
+						prol.Nil),
+					s("clause",
+						s("struct", a("add"),
+							fromList(
+								s("struct", a("s"), fromList(s("var", a("X")), nil)),
+								s("var", a("Y")),
+								s("struct", a("s"), fromList(s("var", a("Z")), nil)),
+								nil)),
+						fromList(s("struct", a("add"),
+							fromList(
+								s("var", a("X")),
+								s("var", a("Y")),
+								s("var", a("Z")),
+								nil)))),
+				)},
+			},
+		},
 	}
 	t.Log(prol.NewDatabase(rules...))
 

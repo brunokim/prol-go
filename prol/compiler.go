@@ -7,14 +7,34 @@ import (
 func CompileRule(ast Term) (Rule, error) {
 	ruleAST, err := checkStruct(ast)
 	if err != nil {
-		return nil, fmt.Errorf("compileRule: %w", err)
+		return nil, fmt.Errorf("CompileRule: %w", err)
 	}
 	switch ruleAST.Indicator() {
 	case Indicator{"clause", 2}:
 		return compileClause(ruleAST)
 	default:
-		return nil, fmt.Errorf("compileRule: unimplemented rule type: %v", ruleAST.Indicator())
+		return nil, fmt.Errorf("CompileRule: unimplemented rule type: %v", ruleAST.Indicator())
 	}
+}
+
+func CompileIndicator(ast Term) (Indicator, error) {
+	indAST, err := checkStruct(ast)
+	if err != nil {
+		return Indicator{}, fmt.Errorf("CompileIndicator: %w", err)
+	}
+	if err := checkIndicator(indAST, Indicator{"indicator", 2}); err != nil {
+		return Indicator{}, fmt.Errorf("CompileIndicator: %w", err)
+	}
+	nameAST, arityAST := Deref(indAST.Args[0]), Deref(indAST.Args[1])
+	name, err := checkAtom(nameAST)
+	if err != nil {
+		return Indicator{}, fmt.Errorf("CompileIndicator: arg #1: %w", err)
+	}
+	arity, err := checkInt(arityAST)
+	if err != nil {
+		return Indicator{}, fmt.Errorf("CompileIndicator: arg #2: %w", err)
+	}
+	return Indicator{name, int(arity)}, nil
 }
 
 func compileClause(ast Struct) (Rule, error) {

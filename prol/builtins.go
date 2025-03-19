@@ -125,6 +125,21 @@ func assertzBuiltin(s Solver, goal Struct) ([]Struct, bool) {
 	return nil, true
 }
 
+func getPredicateBuiltin(s Solver, goal Struct) ([]Struct, bool) {
+	arg1 := Deref(goal.Args[0])
+	ind, err := CompileIndicator(arg1)
+	if err != nil {
+		log.Printf("get_predicate/2: %v", err)
+		return nil, false
+	}
+	rules := s.GetPredicate(ind)
+	terms := make([]Term, len(rules))
+	for i, rule := range rules {
+		terms[i] = rule.ToAST()
+	}
+	return nil, s.Unify(FromList(terms), goal.Args[1])
+}
+
 func printBuiltin(s Solver, goal Struct) ([]Struct, bool) {
 	arg1 := Deref(goal.Args[0])
 	fmt.Println(arg1)
@@ -143,5 +158,6 @@ var builtins = []Builtin{
 	Builtin{Indicator{"chars_to_int", 2}, charsToIntBuiltin},
 	Builtin{Indicator{"atom_length", 2}, atomLengthBuiltin},
 	Builtin{Indicator{"assertz", 1}, assertzBuiltin},
+	Builtin{Indicator{"get_predicate", 2}, getPredicateBuiltin},
 	Builtin{Indicator{"print", 1}, printBuiltin},
 }
