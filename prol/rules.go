@@ -77,41 +77,41 @@ func (Builtin) isRule() {}
 
 // --- Knowledge base ---
 
-type KnowledgeBase struct {
+type Database struct {
 	functors []Functor
 	index0   map[Functor][]Rule
 }
 
-func NewKnowledgeBase(rules ...Rule) *KnowledgeBase {
-	kb := &KnowledgeBase{
+func NewDatabase(rules ...Rule) *Database {
+	db := &Database{
 		index0: make(map[Functor][]Rule),
 	}
 	for _, rule := range builtins {
-		kb.Assert(rule)
+		db.Assert(rule)
 	}
 	for _, rule := range rules {
-		kb.Assert(rule)
+		db.Assert(rule)
 	}
-	return kb
+	return db
 }
 
-func (kb *KnowledgeBase) Assert(rule Rule) {
+func (db *Database) Assert(rule Rule) {
 	f := rule.Functor()
-	if _, ok := kb.index0[f]; !ok {
-		kb.functors = append(kb.functors, f)
+	if _, ok := db.index0[f]; !ok {
+		db.functors = append(db.functors, f)
 	}
-	kb.index0[f] = append(kb.index0[f], rule)
+	db.index0[f] = append(db.index0[f], rule)
 }
 
-func (kb *KnowledgeBase) PredicateExists(goal Struct) bool {
-	_, ok := kb.index0[goal.Functor()]
+func (db *Database) PredicateExists(goal Struct) bool {
+	_, ok := db.index0[goal.Functor()]
 	return ok
 }
 
-func (kb *KnowledgeBase) Matching(goal Struct) iter.Seq[Rule] {
+func (db *Database) Matching(goal Struct) iter.Seq[Rule] {
 	return func(yield func(Rule) bool) {
 		f := goal.Functor()
-		for _, rule := range kb.index0[f] {
+		for _, rule := range db.index0[f] {
 			if !yield(rule) {
 				break
 			}
@@ -183,14 +183,14 @@ const (
 	printDCGExpansion = false
 )
 
-func (kb *KnowledgeBase) String() string {
+func (db *Database) String() string {
 	var b strings.Builder
-	for i, f := range kb.functors {
+	for i, f := range db.functors {
 		if i > 0 {
 			b.WriteString("\n\n")
 		}
 		fmt.Fprintf(&b, "%% %v\n", f)
-		for j, rule := range kb.index0[f] {
+		for j, rule := range db.index0[f] {
 			if j > 0 {
 				b.WriteRune('\n')
 			}

@@ -18,7 +18,7 @@ type Solver interface {
 type Solution map[Var]Term
 
 type solver struct {
-	kb    *KnowledgeBase
+	db    *Database
 	env   map[Var]*Ref
 	trail []*Ref
 	yield func(Solution) bool
@@ -29,13 +29,13 @@ type solver struct {
 }
 
 func (s *solver) Assert(rule Rule) {
-	s.kb.Assert(rule)
+	s.db.Assert(rule)
 }
 
-func (kb *KnowledgeBase) Solve(query Clause, opts ...any) iter.Seq[Solution] {
+func (db *Database) Solve(query Clause, opts ...any) iter.Seq[Solution] {
 	env := make(map[Var]*Ref)
 	query = varToRef(query, env).(Clause)
-	s := &solver{kb: kb, env: env}
+	s := &solver{db: db, env: env}
 	for i := 0; i < len(opts); {
 		switch opts[i] {
 		case "trace":
@@ -45,7 +45,7 @@ func (kb *KnowledgeBase) Solve(query Clause, opts ...any) iter.Seq[Solution] {
 			s.max_depth = opts[i+1].(int)
 			i += 2
 		default:
-			log.Printf("KnowledgeBase.Solve: unknown option at %d: %v\n", i, opts[i])
+			log.Printf("Database.Solve: unknown option at %d: %v\n", i, opts[i])
 			i += 1
 		}
 	}
@@ -77,12 +77,12 @@ func (s *solver) dfs(goals []Struct) bool {
 		log.Println("max depth reached")
 		return false
 	}
-	if !s.kb.PredicateExists(goal) {
+	if !s.db.PredicateExists(goal) {
 		log.Printf("predicate does not exist for goal: %v", goal.Functor())
 		return false
 	}
 	unwind := s.Unwind()
-	for rule := range s.kb.Matching(goal) {
+	for rule := range s.db.Matching(goal) {
 		body, ok := rule.Unify(s, goal)
 		if ok {
 			if !s.dfs(slices.Concat(body, rest)) {

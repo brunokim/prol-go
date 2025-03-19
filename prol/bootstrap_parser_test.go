@@ -15,7 +15,7 @@ import (
 var bootstrap string
 
 func TestBootstrapParsesItself(t *testing.T) {
-	kb, err := prol.Bootstrap()
+	db, err := prol.Bootstrap()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -26,7 +26,7 @@ func TestBootstrapParsesItself(t *testing.T) {
 		prol.Struct{"database_", []prol.Term{prol.MustVar("Rules"), _chars, _rest0}},
 		prol.Struct{"ws_", []prol.Term{_rest0, prol.MustVar("Rest")}},
 	}
-	solution, err := kb.FirstSolution(query, "max_depth", len(bootstrap)*10)
+	solution, err := db.FirstSolution(query, "max_depth", len(bootstrap)*10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -46,11 +46,11 @@ func TestBootstrapParsesItself(t *testing.T) {
 		t.Errorf("trailing characters: %v", rest[:min(len(rest), 50)])
 		return
 	}
-	compiledKB := prol.NewKnowledgeBase(rules...)
+	compiledKB := prol.NewDatabase(rules...)
 	exporter := func(typ reflect.Type) bool {
-		return (typ == reflect.TypeOf(prol.KnowledgeBase{}))
+		return (typ == reflect.TypeOf(prol.Database{}))
 	}
-	diff := cmp.Diff(kb, compiledKB,
+	diff := cmp.Diff(db, compiledKB,
 		cmp.Exporter(exporter),
 		cmpopts.IgnoreUnexported(prol.Builtin{}))
 	if diff != "" {

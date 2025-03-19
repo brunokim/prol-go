@@ -9,21 +9,21 @@ import (
 //go:embed lib/prelude.pl
 var prelude string
 
-func Prelude(opts ...any) (*KnowledgeBase, error) {
-	kb, err := Bootstrap()
+func Prelude(opts ...any) (*Database, error) {
+	db, err := Bootstrap()
 	if err != nil {
 		// Should never happen, represents a library error.
 		return nil, fmt.Errorf("bootstrap library error: %w", err)
 	}
-	if err := kb.Interpret(prelude, opts...); err != nil {
+	if err := db.Interpret(prelude, opts...); err != nil {
 		// Should never happen, represents a library error.
 		return nil, fmt.Errorf("prelude library error: %w", err)
 	}
-	return kb, nil
+	return db, nil
 }
 
-func (kb *KnowledgeBase) FirstSolution(query Clause, opts ...any) (Solution, error) {
-	next, stop := iter.Pull(kb.Solve(query, opts...))
+func (db *Database) FirstSolution(query Clause, opts ...any) (Solution, error) {
+	next, stop := iter.Pull(db.Solve(query, opts...))
 	defer stop()
 	solution, ok := next()
 	if !ok {
@@ -32,7 +32,7 @@ func (kb *KnowledgeBase) FirstSolution(query Clause, opts ...any) (Solution, err
 	return solution, nil
 }
 
-func (kb *KnowledgeBase) Interpret(text string, opts ...any) error {
+func (db *Database) Interpret(text string, opts ...any) error {
 	chars := FromString(text)
 	rest := MustVar("Rest")
 	for {
@@ -43,14 +43,14 @@ func (kb *KnowledgeBase) Interpret(text string, opts ...any) error {
 			Struct{"rule_", []Term{rule, _rest0, rest}},
 			Struct{"assertz", []Term{rule}},
 		}
-		solution, err := kb.FirstSolution(query, opts...)
+		solution, err := db.FirstSolution(query, opts...)
 		if err != nil {
 			break
 		}
 		chars = solution[rest]
 	}
 	fmt.Println("--- finished asserts ---")
-	solution, err := kb.FirstSolution(Clause{
+	solution, err := db.FirstSolution(Clause{
 		Struct{"query", nil},
 		Struct{"ws_", []Term{chars, rest}}}, opts...)
 	trailing, err := ToString(solution[rest])

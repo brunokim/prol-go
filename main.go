@@ -21,7 +21,7 @@ func st(name string, terms ...prol.Term) prol.Struct {
 	return prol.Struct{prol.Atom(name), terms}
 }
 
-var kb = prol.NewKnowledgeBase(
+var db = prol.NewDatabase(
 	// Basic clauses
 	prol.Clause{st("query")},
 	prol.Clause{st("nat", atom("0"))},
@@ -165,13 +165,13 @@ var kb = prol.NewKnowledgeBase(
 
 func init() {
 	for ch := 'A'; ch <= 'Z'; ch++ {
-		kb.Assert(prol.Clause{st("upper", atom(string(ch)))})
+		db.Assert(prol.Clause{st("upper", atom(string(ch)))})
 	}
 	for ch := 'a'; ch <= 'z'; ch++ {
-		kb.Assert(prol.Clause{st("lower", atom(string(ch)))})
+		db.Assert(prol.Clause{st("lower", atom(string(ch)))})
 	}
 	for ch := '0'; ch <= '9'; ch++ {
-		kb.Assert(prol.Clause{st("digit", atom(string(ch)))})
+		db.Assert(prol.Clause{st("digit", atom(string(ch)))})
 	}
 }
 
@@ -192,7 +192,7 @@ func runQuery(title string, query []prol.Struct, opts ...any) {
 	cnt := 1
 	q := prol.Clause(append([]prol.Struct{st("query")}, query...))
 	fmt.Println(q)
-	for solution := range kb.Solve(q, solveOpts...) {
+	for solution := range db.Solve(q, solveOpts...) {
 		fmt.Println(solution)
 		if cnt >= limit && limit >= 0 {
 			break
@@ -208,7 +208,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(kb)
+	fmt.Println(db)
 	fmt.Println()
 	runQuery("First 5 natural numbers",
 		[]prol.Struct{st("nat", var_("X"))},

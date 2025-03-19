@@ -9,14 +9,14 @@ import (
 //go:embed lib/bootstrap.pl
 var bootstrap string
 
-func Bootstrap() (*KnowledgeBase, error) {
+func Bootstrap() (*Database, error) {
 	p := parser{bootstrap, 0}
 	rules := p.database()
-	kb := NewKnowledgeBase(rules...)
+	db := NewDatabase(rules...)
 	if !p.isAtEOF() {
-		return kb, fmt.Errorf("trailing characters at position %d:\n----\n%s\n----", p.pos, p.text[p.pos:min(len(p.text), p.pos+50)])
+		return db, fmt.Errorf("trailing characters at position %d:\n----\n%s\n----", p.pos, p.text[p.pos:min(len(p.text), p.pos+50)])
 	}
-	return kb, nil
+	return db, nil
 }
 
 type parser struct {
