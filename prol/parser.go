@@ -9,10 +9,6 @@ import (
 //go:embed lib/prelude.pl
 var prelude string
 
-// 2025/03/15 02:26:25 clause(struct(quoted_atom_chars, [var('Chars'), var('L1'), var('L')]), [])
-// 2025/03/15 02:26:25 clause(struct(quoted_atom_chars, [atom([]), var('L0'), var('L')]), [struct('=', [var('L0'), struct('.', [atom(''''), var('L')])])])
-// 2025/03/15 02:26:25 clause(struct(quoted_atom_chars, [struct('.', [var('Char'), var('Chars')]), var('L0'), var('L')]), [struct('=', [var('L0'), struct('.', [var('Char'), var('L1')])])
-
 func Prelude(opts ...any) (*KnowledgeBase, error) {
 	kb, err := Bootstrap()
 	if err != nil {

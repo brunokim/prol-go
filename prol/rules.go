@@ -103,52 +103,6 @@ func (kb *KnowledgeBase) Assert(rule Rule) {
 	kb.index0[f] = append(kb.index0[f], rule)
 }
 
-func (kb *KnowledgeBase) RetractIndex(f Functor, i int) bool {
-	clauses, ok := kb.index0[f]
-	if !ok || len(clauses) < i {
-		return false
-	}
-	kb.index0[f] = append(clauses[:i-1], clauses[i:]...)
-	fmt.Println(kb.index0[f])
-	if len(kb.index0[f]) == 0 {
-		delete(kb.index0, f)
-	}
-	return true
-}
-
-func (kb *KnowledgeBase) MoveClauseInPredicate(f Functor, from int, to int) bool {
-	rules, ok := kb.index0[f]
-	if !ok || from < 1 || to < 1 || len(rules) < from || len(rules) < to {
-		return false
-	}
-	if from == to {
-		return true
-	}
-	i, j := from-1, to-1
-	rule := rules[i]
-	if i < j {
-		// [a b X c d e f] --> [a b c d X e f]
-		// [a b] [c d] X [e f]
-		newRules := make([]Rule, len(rules))
-		copy(newRules[:i], rules[:i])
-		copy(newRules[i:j], rules[i+1:j+1])
-		newRules[j] = rule
-		copy(newRules[j:], rules[j+1:])
-		kb.index0[f] = newRules
-	} else {
-		// [a b c d X e f] --> [a b X c d e f]
-		// [a b] X [c d] [e f]
-		newRules := make([]Rule, len(rules))
-		copy(newRules[:j], rules[:j])
-		newRules[j] = rule
-		copy(newRules[j+1:i+1], rules[j:i])
-		copy(newRules[i+1:], rules[i:])
-		kb.index0[f] = newRules
-	}
-	fmt.Println(kb.index0[f])
-	return true
-}
-
 func (kb *KnowledgeBase) PredicateExists(goal Struct) bool {
 	_, ok := kb.index0[goal.Functor()]
 	return ok

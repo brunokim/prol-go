@@ -11,8 +11,6 @@ import (
 
 type Solver interface {
 	Assert(rule Rule)
-	RetractIndex(f Functor, i int) bool
-	MoveClauseInPredicate(f Functor, from int, to int) bool
 	Unify(t1, t2 Term) bool
 	Unwind() func() bool
 }
@@ -32,14 +30,6 @@ type solver struct {
 
 func (s *solver) Assert(rule Rule) {
 	s.kb.Assert(rule)
-}
-
-func (s *solver) RetractIndex(f Functor, i int) bool {
-	return s.kb.RetractIndex(f, i)
-}
-
-func (s *solver) MoveClauseInPredicate(f Functor, from int, to int) bool {
-	return s.kb.MoveClauseInPredicate(f, from, to)
 }
 
 func (kb *KnowledgeBase) Solve(query Clause, opts ...any) iter.Seq[Solution] {

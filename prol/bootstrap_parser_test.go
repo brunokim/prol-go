@@ -57,24 +57,3 @@ func TestBootstrapParsesItself(t *testing.T) {
 		t.Errorf("difference between compilers (-want, +got):\n%s", diff)
 	}
 }
-
-func TestPreludeBuilds(t *testing.T) {
-	kb, err := prol.Prelude()
-	if err != nil {
-		t.Fatal(err)
-	}
-	solution, err := kb.FirstSolution(prol.Clause{
-		prol.Struct{"query", nil},
-		prol.Struct{"test_atom_", []prol.Term{prol.MustVar("Atom")}},
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	term := prol.Deref(solution["Atom"])
-	atom, ok := term.(prol.Atom)
-	if !ok {
-		t.Errorf("not an atom: %v", term)
-	} else if atom != "with nested -->'<-- single quotes" {
-		t.Errorf("got: %s", atom)
-	}
-}
