@@ -8,6 +8,14 @@ atom_chars(Atom, Chars) :-
   atom(Atom),
   atom_to_chars(Atom, Chars).
 
+int_chars(Int, Chars) :-
+  var(Int),
+  is_char_list(Chars),
+  chars_to_int(Chars, Int).
+int_chars(Int, Chars) :-
+  int(Int),
+  int_to_chars(Int, Chars).
+
 is_char_list(\.(Char, Chars)) :-
   atom_length(Char, 1),
   is_char_list(Chars).
@@ -51,6 +59,8 @@ term(Term, L0, L) :-
   atom(Term, L0, L).
 term(Term, L0, L) :-
   var(Term, L0, L).
+term(Term, L0, L) :-
+  int(Term, L0, L).
 
 struct(struct(Name, Args), L0, L) :-
   atom(atom(Name), L0, L1),
@@ -83,11 +93,26 @@ var(var(Name), L0, L) :-
   ident_chars(Chars, L1, L),
   atom_chars(Name, \.(Char, Chars)).
 
+int(int(Int), L0, L) :-
+  \=(L0, \.(Char, L1)),
+  ascii_digit(Char),
+  print(int),
+  print(Char),
+  digits(Chars, L1, L),
+  print(Chars),
+  int_chars(Int, \.(Char, Chars)).
+
 ident_chars(\.(Char, Chars), L0, L) :-
   \=(L0, \.(Char, L1)),
   ident(Char),
   ident_chars(Chars, L1, L).
 ident_chars([], L, L).
+
+digits(\.(Char, Chars), L0, L) :-
+  \=(L0, \.(Char, L1)),
+  ascii_digit(Char),
+  digits(Chars, L1, L).
+digits([], L, L).
 
 ws(L0, L) :-
   \=(L0, \.(Char, L1)),
@@ -97,8 +122,6 @@ ws(L, L).
 
 atom_start(Char) :-
   ascii_lower(Char).
-atom_start(Char) :-
-  ascii_digit(Char).
 
 var_start(\_).
 var_start(Char) :-

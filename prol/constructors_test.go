@@ -10,6 +10,10 @@ func a(name string) prol.Atom {
 	return prol.Atom(name)
 }
 
+func int_(i int) prol.Int {
+	return prol.Int(i)
+}
+
 func v(name string) prol.Var {
 	return prol.MustVar(name)
 }

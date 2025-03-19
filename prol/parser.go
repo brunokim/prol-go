@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"fmt"
 	"regexp"
+	"strconv"
 )
 
 var (
@@ -129,14 +130,22 @@ func (p *parser) terms() ([]Term, bool) {
 
 func (p *parser) term() (Term, bool) {
 	atom, ok := p.atom()
-	if !ok {
+	if ok {
+		if !p.match(`\(`) {
+			// Plain atom
+			return atom, true
+		}
+		return p.structArgs(atom)
+	}
+	if x, ok := p.var_(); ok {
 		// Var
-		return p.var_()
+		return x, true
 	}
-	if !p.match(`\(`) {
-		// Plain atom
-		return atom, true
-	}
+	// Int
+	return p.int_()
+}
+
+func (p *parser) structArgs(atom Atom) (Struct, bool) {
 	// Struct
 	p.ws()
 	if p.match(`\)`) {
@@ -159,12 +168,25 @@ func (p *parser) atom() (Atom, bool) {
 		// Single character
 		return Atom(m[1]), true
 	}
-	m = p.match2(`([a-z0-9][a-z0-9A-Z_]*|\[\])`)
+	m = p.match2(`([a-z][a-z0-9A-Z_]*|\[\])`)
 	if m != nil {
 		// Symbol
 		return Atom(m[0]), true
 	}
 	return Atom(""), false
+}
+
+func (p *parser) int_() (Int, bool) {
+	m := p.match2(`[0-9]+`)
+	if m == nil {
+		return Int(0), false
+	}
+	// Int
+	i, err := strconv.Atoi(m[0])
+	if err != nil {
+		return Int(0), false
+	}
+	return Int(i), true
 }
 
 func (p *parser) var_() (Var, bool) {

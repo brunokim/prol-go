@@ -19,6 +19,9 @@ type Term interface {
 // Atom is an immutable symbol.
 type Atom string
 
+// Int is an atomic integral number.
+type Int int
+
 // Var is a static-time variable.
 type Var string
 
@@ -36,6 +39,7 @@ type Ref struct {
 }
 
 func (Atom) isTerm()   {}
+func (Int) isTerm()    {}
 func (Var) isTerm()    {}
 func (Struct) isTerm() {}
 func (*Ref) isTerm()   {}
@@ -147,7 +151,7 @@ func FromString(s string) Term {
 // ToString converts an atom list term to a Go string.
 func ToString(t Term) (string, error) {
 	chars, tail := ToList(t)
-	if tail != Atom("[]") {
+	if tail != Nil {
 		return "", fmt.Errorf("not a proper list: %v", t)
 	}
 	var b strings.Builder
@@ -197,6 +201,10 @@ func (t Atom) String() string {
 	return fmt.Sprintf("'%s'", strings.Replace(string(t), "'", "''", -1))
 }
 
+func (t Int) String() string {
+	return fmt.Sprintf("%d", int(t))
+}
+
 func (t Var) String() string {
 	return string(t)
 }
@@ -229,7 +237,7 @@ func commaSeparated(b *strings.Builder, terms []Term) {
 func listToString(terms []Term, tail Term) string {
 	var b strings.Builder
 	// Not a proper list.
-	if tail != Atom("[]") {
+	if tail != Nil {
 		b.WriteRune('[')
 		commaSeparated(&b, terms)
 		b.WriteRune('|')

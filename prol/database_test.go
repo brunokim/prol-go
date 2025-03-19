@@ -91,13 +91,13 @@ func TestSolve(t *testing.T) {
 		{
 			"Dynamic asserts",
 			clause(s("query"),
-				s("assertz", s("clause", s("struct", a("bit"), fromList(s("atom", a("0")))), a("[]"))),
-				s("assertz", s("clause", s("struct", a("bit"), fromList(s("atom", a("1")))), a("[]"))),
+				s("assertz", s("clause", s("struct", a("bit"), fromList(s("int", int_(0)))), a("[]"))),
+				s("assertz", s("clause", s("struct", a("bit"), fromList(s("int", int_(1)))), a("[]"))),
 				s("bit", v("X"))),
 			nil,
 			[]prol.Solution{
-				{"X": a("0")},
-				{"X": a("1")},
+				{"X": int_(0)},
+				{"X": int_(1)},
 			},
 		},
 	}

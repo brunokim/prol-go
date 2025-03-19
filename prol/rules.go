@@ -40,7 +40,7 @@ func (c DCG) toClause() Clause {
 		// List
 		terms, tail := ToList(s)
 		if len(terms) > 0 {
-			if tail != Atom("[]") {
+			if tail != Nil {
 				panic(fmt.Sprintf("invalid DCG"))
 			}
 			curr, next := Var(fmt.Sprintf("L%d", i)), Var(fmt.Sprintf("L%d", i+1))

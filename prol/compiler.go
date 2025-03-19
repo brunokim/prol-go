@@ -42,6 +42,8 @@ func compileTerm(ast Struct) (Term, error) {
 	switch ast.Indicator() {
 	case Indicator{"atom", 1}:
 		return compileAtom(ast)
+	case Indicator{"int", 1}:
+		return compileInt(ast)
 	case Indicator{"var", 1}:
 		return compileVar(ast)
 	case Indicator{"struct", 2}:
@@ -61,6 +63,18 @@ func compileAtom(ast Struct) (Atom, error) {
 		return Atom(""), fmt.Errorf("name: %w", err)
 	}
 	return name, nil
+}
+
+func compileInt(ast Struct) (Int, error) {
+	if err := checkIndicator(ast, Indicator{"int", 1}); err != nil {
+		return Int(0), err
+	}
+	arg1 := Deref(ast.Args[0])
+	i, err := checkInt(arg1)
+	if err != nil {
+		return Int(0), fmt.Errorf("name: %w", err)
+	}
+	return i, nil
 }
 
 func compileVar(ast Struct) (Var, error) {
@@ -137,6 +151,14 @@ func checkAtom(term Term) (Atom, error) {
 	return a, nil
 }
 
+func checkInt(term Term) (Int, error) {
+	i, ok := term.(Int)
+	if !ok {
+		return Int(0), fmt.Errorf("not an int")
+	}
+	return i, nil
+}
+
 func checkStruct(term Term) (Struct, error) {
 	s, ok := term.(Struct)
 	if !ok {
@@ -154,7 +176,7 @@ func checkIndicator(s Struct, f Indicator) error {
 
 func checkProperList(term Term) ([]Term, error) {
 	xs, tail := ToList(term)
-	if tail != Atom("[]") {
+	if tail != Nil {
 		return nil, fmt.Errorf("not a proper list")
 	}
 	return xs, nil
