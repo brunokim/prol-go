@@ -88,6 +88,18 @@ func TestSolve(t *testing.T) {
 				{"List": s(".", ref("H"), s(".", ref("H"), s(".", a("a"), ref("T"))))},
 			},
 		},
+		{
+			"Dynamic asserts",
+			clause(s("query"),
+				s("assertz", s("clause", s("struct", a("bit"), fromList(s("atom", a("0")))), a("[]"))),
+				s("assertz", s("clause", s("struct", a("bit"), fromList(s("atom", a("1")))), a("[]"))),
+				s("bit", v("X"))),
+			nil,
+			[]prol.Solution{
+				{"X": a("0")},
+				{"X": a("1")},
+			},
+		},
 	}
 	t.Log(prol.NewDatabase(rules...))
 
