@@ -18,6 +18,10 @@ func s(name prol.Atom, args ...prol.Term) prol.Struct {
 	return prol.Struct{name, args}
 }
 
+func ref(name string) *prol.Ref {
+	return prol.NewRef(v(name))
+}
+
 func clause(head prol.Struct, body ...prol.Struct) prol.Clause {
 	return append(prol.Clause{head}, body...)
 }

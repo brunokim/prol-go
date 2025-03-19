@@ -121,11 +121,11 @@ type solver struct {
 	trail []*Ref
 	yield func(Solution) bool
 	// Opts
-	trace         bool
-	depth         int
-	max_depth     int
-	num_solutions int
-	limit         int
+	trace        bool
+	depth        int
+	maxDepth     int
+	numSolutions int
+	limit        int
 }
 
 func (s *solver) readOpts(opts []any) {
@@ -135,7 +135,7 @@ func (s *solver) readOpts(opts []any) {
 			s.trace = true
 			i += 1
 		case "max_depth":
-			s.max_depth = opts[i+1].(int)
+			s.maxDepth = opts[i+1].(int)
 			i += 2
 		case "limit":
 			s.limit = opts[i+1].(int)
@@ -152,6 +152,9 @@ func (s *solver) Assert(rule Rule) {
 }
 
 func (s *solver) dfs(goals []Struct) bool {
+	if s.limit > 0 && s.numSolutions >= s.limit {
+		return false
+	}
 	if len(goals) == 0 {
 		m := make(Solution)
 		for x, ref := range s.env {
@@ -160,11 +163,7 @@ func (s *solver) dfs(goals []Struct) bool {
 			}
 			m[x] = RefToTerm(ref)
 		}
-		s.num_solutions++
-		if s.limit > 0 && s.num_solutions > s.limit {
-			log.Println("limit of number of solutions reached")
-			return false
-		}
+		s.numSolutions++
 		return s.yield(m)
 	}
 	goal, rest := goals[0], goals[1:]
@@ -173,7 +172,7 @@ func (s *solver) dfs(goals []Struct) bool {
 	}
 	s.depth++
 	defer func() { s.depth-- }()
-	if s.max_depth > 0 && s.depth > s.max_depth {
+	if s.maxDepth > 0 && s.depth > s.maxDepth {
 		log.Println("max depth reached")
 		return false
 	}
@@ -186,6 +185,7 @@ func (s *solver) dfs(goals []Struct) bool {
 		body, ok := rule.Unify(s, goal)
 		if ok {
 			if !s.dfs(slices.Concat(body, rest)) {
+				unwind()
 				return false
 			}
 		}
