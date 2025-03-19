@@ -109,6 +109,7 @@ func (db *Database) Interpret(text string, opts ...any) error {
 
 type Solver interface {
 	GetPredicate(ind Indicator) []Rule
+	PutPredicate(ind Indicator, rules []Rule) bool
 	Assert(rule Rule)
 	Unify(t1, t2 Term) bool
 	Unwind() func() bool
@@ -150,6 +151,20 @@ func (s *solver) readOpts(opts []any) {
 
 func (s *solver) GetPredicate(ind Indicator) []Rule {
 	return s.db.index0[ind]
+}
+
+func (s *solver) PutPredicate(ind Indicator, rules []Rule) bool {
+	for i, rule := range rules {
+		if rule.Indicator() != ind {
+			log.Printf("put_predicate: arg #%d: want %v, got %v", i+1, ind, rule.Indicator())
+			return false
+		}
+	}
+	if _, ok := s.db.index0[ind]; !ok {
+		s.db.indicators = append(s.db.indicators, ind)
+	}
+	s.db.index0[ind] = rules
+	return true
 }
 
 func (s *solver) Assert(rule Rule) {

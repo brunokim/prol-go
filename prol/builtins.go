@@ -140,6 +140,29 @@ func getPredicateBuiltin(s Solver, goal Struct) ([]Struct, bool) {
 	return nil, s.Unify(FromList(terms), goal.Args[1])
 }
 
+func putPredicateBuiltin(s Solver, goal Struct) ([]Struct, bool) {
+	arg1 := Deref(goal.Args[0])
+	ind, err := CompileIndicator(arg1)
+	if err != nil {
+		log.Printf("put_predicate/2: arg #1: %v", err)
+		return nil, false
+	}
+	rulesAST, tail := ToList(Deref(goal.Args[1]))
+	if tail != Nil {
+		log.Printf("put_predicate/2: arg #2: not a proper list")
+		return nil, false
+	}
+	rules := make([]Rule, len(rulesAST))
+	for i, ruleAST := range rulesAST {
+		rules[i], err = CompileRule(Deref(ruleAST))
+		if err != nil {
+			log.Printf("put_predicate/2: rule #%d: %v", i+1, err)
+			return nil, false
+		}
+	}
+	return nil, s.PutPredicate(ind, rules)
+}
+
 func printBuiltin(s Solver, goal Struct) ([]Struct, bool) {
 	arg1 := Deref(goal.Args[0])
 	fmt.Println(arg1)
@@ -159,5 +182,6 @@ var builtins = []Builtin{
 	Builtin{Indicator{"atom_length", 2}, atomLengthBuiltin},
 	Builtin{Indicator{"assertz", 1}, assertzBuiltin},
 	Builtin{Indicator{"get_predicate", 2}, getPredicateBuiltin},
+	Builtin{Indicator{"put_predicate", 2}, putPredicateBuiltin},
 	Builtin{Indicator{"print", 1}, printBuiltin},
 }

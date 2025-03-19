@@ -30,6 +30,10 @@ var (
 		clause(s("member_", v("_"), v("Elem"), v("Elem"))),
 		clause(s("member_", s(".", v("H"), v("T")), v("Elem"), v("_")),
 			s("member_", v("T"), v("Elem"), v("H"))),
+		// complete_me([X|L0], L) :- atom(X), complete_me(L0, L).
+		clause(s("complete_me", s(".", v("X"), v("L0")), v("L")),
+			s("atom", v("X")),
+			s("complete_me", v("L0"), v("L"))),
 	}
 )
 
@@ -112,23 +116,41 @@ func TestSolve(t *testing.T) {
 							fromList(
 								s("atom", a("0")),
 								s("var", a("X")),
-								s("var", a("X")),
-								nil)),
+								s("var", a("X")))),
 						prol.Nil),
 					s("clause",
 						s("struct", a("add"),
 							fromList(
-								s("struct", a("s"), fromList(s("var", a("X")), nil)),
+								s("struct", a("s"), fromList(s("var", a("X")))),
 								s("var", a("Y")),
-								s("struct", a("s"), fromList(s("var", a("Z")), nil)),
-								nil)),
+								s("struct", a("s"), fromList(s("var", a("Z")))))),
 						fromList(s("struct", a("add"),
 							fromList(
 								s("var", a("X")),
 								s("var", a("Y")),
-								s("var", a("Z")),
-								nil)))),
+								s("var", a("Z")))))),
 				)},
+			},
+		},
+		{
+			"Database manipulation",
+			clause(s("query"),
+				s("get_predicate", s("indicator", a("complete_me"), int_(2)), fromList(v("_C1"))),
+				s("put_predicate", s("indicator", a("complete_me"), int_(2)), fromList(
+					s("clause",
+						s("struct", a("complete_me"),
+							fromList(
+								s("var", a("L")),
+								s("var", a("L")))),
+						prol.Nil),
+					v("_C1"))),
+				s("complete_me", fromList(a("1"), a("10"), a("100"), int_(1000)), v("Rest"))),
+			nil,
+			[]prol.Solution{
+				{"Rest": fromList(a("1"), a("10"), a("100"), int_(1000))},
+				{"Rest": fromList(a("10"), a("100"), int_(1000))},
+				{"Rest": fromList(a("100"), int_(1000))},
+				{"Rest": fromList(int_(1000))},
 			},
 		},
 	}

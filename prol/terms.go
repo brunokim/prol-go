@@ -117,7 +117,7 @@ func (v Var) ToAST() Struct {
 }
 
 func (s Struct) ToAST() Struct {
-	args := make([]Term, len(s.Args)+1)
+	args := make([]Term, len(s.Args))
 	for i, arg := range s.Args {
 		args[i] = arg.ToAST()
 	}
@@ -222,7 +222,7 @@ func RefToTerm(x Term) Term {
 // --- String ---
 
 var (
-	atomRE = regexp.MustCompile(`^([\p{Ll}\pN][\pL\pN_]*|\[\])$`)
+	atomRE = regexp.MustCompile(`^([\p{Ll}][\pL\pN_]*|\[\])$`)
 )
 
 func (t Atom) String() string {
