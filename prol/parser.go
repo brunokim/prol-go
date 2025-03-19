@@ -34,7 +34,9 @@ func Bootstrap() (*Database, error) {
 	rules := p.database()
 	db := NewDatabase(rules...)
 	if !p.isAtEOF() {
-		return db, fmt.Errorf("trailing characters at position %d:\n----\n%s\n----", p.pos, p.text[p.pos:min(len(p.text), p.pos+50)])
+		return db, fmt.Errorf(
+            "trailing characters at position %d:\n----\n%s\n----",
+            p.pos, p.text[p.pos:min(len(p.text), p.pos+50)])
 	}
 	return db, nil
 }
