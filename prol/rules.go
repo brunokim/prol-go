@@ -2,7 +2,6 @@ package prol
 
 import (
 	"fmt"
-	"iter"
 	"slices"
 	"strings"
 )
@@ -75,50 +74,6 @@ type Builtin struct {
 
 func (Builtin) isRule() {}
 
-// --- Knowledge base ---
-
-type Database struct {
-	functors []Functor
-	index0   map[Functor][]Rule
-}
-
-func NewDatabase(rules ...Rule) *Database {
-	db := &Database{
-		index0: make(map[Functor][]Rule),
-	}
-	for _, rule := range builtins {
-		db.Assert(rule)
-	}
-	for _, rule := range rules {
-		db.Assert(rule)
-	}
-	return db
-}
-
-func (db *Database) Assert(rule Rule) {
-	f := rule.Functor()
-	if _, ok := db.index0[f]; !ok {
-		db.functors = append(db.functors, f)
-	}
-	db.index0[f] = append(db.index0[f], rule)
-}
-
-func (db *Database) PredicateExists(goal Struct) bool {
-	_, ok := db.index0[goal.Functor()]
-	return ok
-}
-
-func (db *Database) Matching(goal Struct) iter.Seq[Rule] {
-	return func(yield func(Rule) bool) {
-		f := goal.Functor()
-		for _, rule := range db.index0[f] {
-			if !yield(rule) {
-				break
-			}
-		}
-	}
-}
-
 // --- Functor ---
 
 func (c Clause) Functor() Functor {
@@ -177,61 +132,4 @@ func (c DCG) String() string {
 
 func (c Builtin) String() string {
 	return fmt.Sprintf("%v: <builtin %p>", c.functor, c.unify)
-}
-
-const (
-	printDCGExpansion = false
-)
-
-func (db *Database) String() string {
-	var b strings.Builder
-	for i, f := range db.functors {
-		if i > 0 {
-			b.WriteString("\n\n")
-		}
-		fmt.Fprintf(&b, "%% %v\n", f)
-		for j, rule := range db.index0[f] {
-			if j > 0 {
-				b.WriteRune('\n')
-			}
-			fmt.Fprintf(&b, "%v", rule)
-			if dcg, ok := rule.(DCG); ok && printDCGExpansion {
-				fmt.Fprintf(&b, "\n/*")
-				fmt.Fprintf(&b, "%v", dcg.toClause())
-				fmt.Fprintf(&b, "*/")
-			}
-		}
-	}
-	return b.String()
-}
-
-// --- Replace vars with refs ---
-
-func varToRef(x any, env map[Var]*Ref) any {
-	switch v := x.(type) {
-	case Clause:
-		y := make(Clause, len(v))
-		for i, goal := range v {
-			y[i] = varToRef(goal, env).(Struct)
-		}
-		return y
-	case Struct:
-		y := Struct{v.Name, make([]Term, len(v.Args))}
-		for i, arg := range v.Args {
-			y.Args[i] = varToRef(arg, env).(Term)
-		}
-		return y
-	case Var:
-		if v == "_" {
-			refID++
-			return &Ref{v, refID, nil}
-		}
-		if _, ok := env[v]; !ok {
-			refID++
-			env[v] = &Ref{v, refID, nil}
-		}
-		return env[v]
-	default:
-		return x
-	}
 }
