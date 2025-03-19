@@ -81,20 +81,20 @@ func NewRef(v Var) *Ref {
 	return &Ref{v, refID, nil}
 }
 
-// --- Functor ---
+// --- Indicator ---
 
-// Functor represents the basic shape of a struct, with its name and arity.
-type Functor struct {
+// Indicator represents the basic shape of a struct, with its name and arity.
+type Indicator struct {
 	Name  Atom
 	Arity int
 }
 
-func (f Functor) String() string {
+func (f Indicator) String() string {
 	return fmt.Sprintf("%v/%d", f.Name, f.Arity)
 }
 
-func (s Struct) Functor() Functor {
-	return Functor{s.Name, len(s.Args)}
+func (s Struct) Indicator() Indicator {
+	return Indicator{s.Name, len(s.Args)}
 }
 
 // --- Atom ---

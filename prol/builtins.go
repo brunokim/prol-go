@@ -74,7 +74,7 @@ func assertzBuiltin(s Solver, goal Struct) ([]Struct, bool) {
 		return nil, false
 	}
 	log.Println("asserting\n", clause)
-	if clause.Functor() == (Functor{"directive", 0}) {
+	if clause.Indicator() == (Indicator{"directive", 0}) {
 		// Execute directive immediately.
 		return clause.(Clause).Body(), true
 	}
@@ -89,15 +89,15 @@ func printBuiltin(s Solver, goal Struct) ([]Struct, bool) {
 }
 
 var builtins = []Builtin{
-	Builtin{Functor{"=", 2}, unifyBuiltin},
-	Builtin{Functor{"neq", 2}, notEqualsBuiltin},
-	Builtin{Functor{"atom", 1}, atomBuiltin},
-	Builtin{Functor{"var", 1}, varBuiltin},
-	Builtin{Functor{"atom->chars", 2}, atomToCharsBuiltin},
-	Builtin{Functor{"chars->atom", 2}, charsToAtomBuiltin},
-	Builtin{Functor{"atom_to_chars", 2}, atomToCharsBuiltin},
-	Builtin{Functor{"chars_to_atom", 2}, charsToAtomBuiltin},
-	Builtin{Functor{"atom_length", 2}, atomLengthBuiltin},
-	Builtin{Functor{"assertz", 1}, assertzBuiltin},
-	Builtin{Functor{"print", 1}, printBuiltin},
+	Builtin{Indicator{"=", 2}, unifyBuiltin},
+	Builtin{Indicator{"neq", 2}, notEqualsBuiltin},
+	Builtin{Indicator{"atom", 1}, atomBuiltin},
+	Builtin{Indicator{"var", 1}, varBuiltin},
+	Builtin{Indicator{"atom->chars", 2}, atomToCharsBuiltin},
+	Builtin{Indicator{"chars->atom", 2}, charsToAtomBuiltin},
+	Builtin{Indicator{"atom_to_chars", 2}, atomToCharsBuiltin},
+	Builtin{Indicator{"chars_to_atom", 2}, charsToAtomBuiltin},
+	Builtin{Indicator{"atom_length", 2}, atomLengthBuiltin},
+	Builtin{Indicator{"assertz", 1}, assertzBuiltin},
+	Builtin{Indicator{"print", 1}, printBuiltin},
 }

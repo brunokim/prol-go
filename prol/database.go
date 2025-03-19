@@ -12,13 +12,13 @@ import (
 // --- Database ---
 
 type Database struct {
-	functors []Functor
-	index0   map[Functor][]Rule
+	indicators []Indicator
+	index0     map[Indicator][]Rule
 }
 
 func NewDatabase(rules ...Rule) *Database {
 	db := &Database{
-		index0: make(map[Functor][]Rule),
+		index0: make(map[Indicator][]Rule),
 	}
 	for _, rule := range builtins {
 		db.Assert(rule)
@@ -30,21 +30,21 @@ func NewDatabase(rules ...Rule) *Database {
 }
 
 func (db *Database) Assert(rule Rule) {
-	f := rule.Functor()
+	f := rule.Indicator()
 	if _, ok := db.index0[f]; !ok {
-		db.functors = append(db.functors, f)
+		db.indicators = append(db.indicators, f)
 	}
 	db.index0[f] = append(db.index0[f], rule)
 }
 
 func (db *Database) PredicateExists(goal Struct) bool {
-	_, ok := db.index0[goal.Functor()]
+	_, ok := db.index0[goal.Indicator()]
 	return ok
 }
 
 func (db *Database) Matching(goal Struct) iter.Seq[Rule] {
 	return func(yield func(Rule) bool) {
-		f := goal.Functor()
+		f := goal.Indicator()
 		for _, rule := range db.index0[f] {
 			if !yield(rule) {
 				break
@@ -168,7 +168,7 @@ func (s *solver) dfs(goals []Struct) bool {
 	}
 	goal, rest := goals[0], goals[1:]
 	if s.trace {
-		log.Println(">>> goal:", goal.Functor())
+		log.Println(">>> goal:", goal.Indicator())
 	}
 	s.depth++
 	defer func() { s.depth-- }()
@@ -177,7 +177,7 @@ func (s *solver) dfs(goals []Struct) bool {
 		return false
 	}
 	if !s.db.PredicateExists(goal) {
-		log.Printf("predicate does not exist for goal: %v", goal.Functor())
+		log.Printf("predicate does not exist for goal: %v", goal.Indicator())
 		return false
 	}
 	unwind := s.Unwind()
@@ -290,9 +290,9 @@ const (
 func (db *Database) String() string {
 	var b strings.Builder
 	var cnt int
-	for _, f := range db.functors {
-		if len(db.index0[f]) == 1 {
-			rule := db.index0[f][0]
+	for _, ind := range db.indicators {
+		if len(db.index0[ind]) == 1 {
+			rule := db.index0[ind][0]
 			if _, ok := rule.(Builtin); ok {
 				continue
 			}
@@ -301,8 +301,8 @@ func (db *Database) String() string {
 			b.WriteString("\n\n")
 		}
 		cnt++
-		fmt.Fprintf(&b, "%% %v\n", f)
-		for j, rule := range db.index0[f] {
+		fmt.Fprintf(&b, "%% %v\n", ind)
+		for j, rule := range db.index0[ind] {
 			if j > 0 {
 				b.WriteRune('\n')
 			}

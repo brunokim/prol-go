@@ -8,7 +8,7 @@ import (
 
 type Rule interface {
 	isRule()
-	Functor() Functor
+	Indicator() Indicator
 	Unify(s Solver, goal Struct) (body []Struct, ok bool)
 }
 
@@ -68,24 +68,24 @@ func (c DCG) toClause() Clause {
 // --- Builtins ---
 
 type Builtin struct {
-	functor Functor
-	unify   func(Solver, Struct) ([]Struct, bool)
+	indicator Indicator
+	unify     func(Solver, Struct) ([]Struct, bool)
 }
 
 func (Builtin) isRule() {}
 
-// --- Functor ---
+// --- Indicator ---
 
-func (c Clause) Functor() Functor {
-	return c.Head().Functor()
+func (c Clause) Indicator() Indicator {
+	return c.Head().Indicator()
 }
 
-func (c DCG) Functor() Functor {
-	return Functor{c[0].Name, len(c[0].Args) + 2}
+func (c DCG) Indicator() Indicator {
+	return Indicator{c[0].Name, len(c[0].Args) + 2}
 }
 
-func (c Builtin) Functor() Functor {
-	return c.functor
+func (c Builtin) Indicator() Indicator {
+	return c.indicator
 }
 
 // --- Unify ---
@@ -131,5 +131,5 @@ func (c DCG) String() string {
 }
 
 func (c Builtin) String() string {
-	return fmt.Sprintf("%v: <builtin %p>", c.functor, c.unify)
+	return fmt.Sprintf("%v: <builtin %p>", c.indicator, c.unify)
 }

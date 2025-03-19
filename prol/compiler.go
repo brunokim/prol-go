@@ -9,11 +9,11 @@ func CompileRule(ast Term) (Rule, error) {
 	if err != nil {
 		return nil, fmt.Errorf("compileRule: %w", err)
 	}
-	switch ruleAST.Functor() {
-	case Functor{"clause", 2}:
+	switch ruleAST.Indicator() {
+	case Indicator{"clause", 2}:
 		return compileClause(ruleAST)
 	default:
-		return nil, fmt.Errorf("compileRule: unimplemented rule type: %v", ruleAST.Functor())
+		return nil, fmt.Errorf("compileRule: unimplemented rule type: %v", ruleAST.Indicator())
 	}
 }
 
@@ -39,20 +39,20 @@ func compileClause(ast Struct) (Rule, error) {
 }
 
 func compileTerm(ast Struct) (Term, error) {
-	switch ast.Functor() {
-	case Functor{"atom", 1}:
+	switch ast.Indicator() {
+	case Indicator{"atom", 1}:
 		return compileAtom(ast)
-	case Functor{"var", 1}:
+	case Indicator{"var", 1}:
 		return compileVar(ast)
-	case Functor{"struct", 2}:
+	case Indicator{"struct", 2}:
 		return compileStruct(ast)
 	default:
-		return nil, fmt.Errorf("compileTerm: unimplemented term type: %v", ast.Functor())
+		return nil, fmt.Errorf("compileTerm: unimplemented term type: %v", ast.Indicator())
 	}
 }
 
 func compileAtom(ast Struct) (Atom, error) {
-	if err := checkFunctor(ast, Functor{"atom", 1}); err != nil {
+	if err := checkIndicator(ast, Indicator{"atom", 1}); err != nil {
 		return Atom(""), err
 	}
 	arg1 := Deref(ast.Args[0])
@@ -64,7 +64,7 @@ func compileAtom(ast Struct) (Atom, error) {
 }
 
 func compileVar(ast Struct) (Var, error) {
-	if err := checkFunctor(ast, Functor{"var", 1}); err != nil {
+	if err := checkIndicator(ast, Indicator{"var", 1}); err != nil {
 		return Var(""), err
 	}
 	arg1 := Deref(ast.Args[0])
@@ -76,7 +76,7 @@ func compileVar(ast Struct) (Var, error) {
 }
 
 func compileStruct(ast Struct) (Struct, error) {
-	if err := checkFunctor(ast, Functor{"struct", 2}); err != nil {
+	if err := checkIndicator(ast, Indicator{"struct", 2}); err != nil {
 		return Struct{}, err
 	}
 	arg1, arg2 := Deref(ast.Args[0]), Deref(ast.Args[1])
@@ -145,9 +145,9 @@ func checkStruct(term Term) (Struct, error) {
 	return s, nil
 }
 
-func checkFunctor(s Struct, f Functor) error {
-	if s.Functor() != f {
-		return fmt.Errorf("want functor %v (!= %v)", f, s.Functor())
+func checkIndicator(s Struct, f Indicator) error {
+	if s.Indicator() != f {
+		return fmt.Errorf("want indicator %v (!= %v)", f, s.Indicator())
 	}
 	return nil
 }
