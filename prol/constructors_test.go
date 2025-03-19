@@ -26,10 +26,18 @@ func dcg(head prol.Struct, body ...prol.Struct) prol.DCG {
 	return append(prol.DCG{head}, body...)
 }
 
-func toList(terms ...prol.Term) prol.Term {
+func toList(term prol.Term) ([]prol.Term, prol.Term) {
+	return prol.ToList(term)
+}
+
+func fromList(terms ...prol.Term) prol.Term {
 	return prol.FromList(terms)
 }
 
 func fromString(s string) prol.Term {
 	return prol.FromString(s)
+}
+
+func toString(t prol.Term) (string, error) {
+	return prol.ToString(t)
 }

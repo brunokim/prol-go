@@ -19,18 +19,15 @@ func TestBootstrapParsesItself(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_chars, _rest0 := prol.MustVar("_Chars"), prol.MustVar("_Rest0")
-	query := prol.Clause{
-		prol.Struct{"query", nil},
-		prol.Struct{"atom_chars", []prol.Term{prol.Atom(bootstrap), _chars}},
-		prol.Struct{"database", []prol.Term{prol.MustVar("Rules"), _chars, _rest0}},
-		prol.Struct{"ws", []prol.Term{_rest0, prol.MustVar("Rest")}},
-	}
+	query := clause(s("query"),
+		s("atom_chars", a(bootstrap), v("_Chars")),
+		s("database", v("Rules"), v("_Chars"), v("_Rest0")),
+		s("ws", v("_Rest0"), v("Rest")))
 	solution, err := db.FirstSolution(query, "max_depth", len(bootstrap)*10)
 	if err != nil {
 		t.Fatal(err)
 	}
-	rulesAST, _ := prol.ToList(solution["Rules"])
+	rulesAST, _ := toList(solution["Rules"])
 	var rules []prol.Rule
 	for i, ruleAST := range rulesAST {
 		rule, err := prol.CompileRule(ruleAST)
@@ -41,7 +38,7 @@ func TestBootstrapParsesItself(t *testing.T) {
 			t.Log(rule)
 		}
 	}
-	rest, _ := prol.ToList(solution["Rest"])
+	rest, _ := toString(solution["Rest"])
 	if len(rest) > 0 {
 		t.Errorf("trailing characters: %v", rest[:min(len(rest), 50)])
 		return
