@@ -1,10 +1,10 @@
 query().
 
-atom_chars_(Atom, Chars) :-
+atom_chars(Atom, Chars) :-
   var(Atom),
   is_char_list(Chars),
   chars_to_atom(Chars, Atom).
-atom_chars_(Atom, Chars) :-
+atom_chars(Atom, Chars) :-
   atom(Atom),
   atom_to_chars(Atom, Chars).
 
@@ -13,87 +13,87 @@ is_char_list(\.(Char, Chars)) :-
   is_char_list(Chars).
 is_char_list([]).
 
-database_(\.(Rule, Rules), L0, L) :-
-  rule_(Rule, L0, L1),
-  ws_(L1, L2),
-  database_(Rules, L2, L).
-database_(\.(Rule, []), L0, L) :-
-  rule_(Rule, L0, L).
+database(\.(Rule, Rules), L0, L) :-
+  rule(Rule, L0, L1),
+  ws(L1, L2),
+  database(Rules, L2, L).
+database(\.(Rule, []), L0, L) :-
+  rule(Rule, L0, L).
 
-rule_(Rule, L0, L) :-
-  clause_(Rule, L0, L).
+rule(Rule, L0, L) :-
+  clause(Rule, L0, L).
 
-clause_(clause(Head, Body), L0, L) :-
-  struct_(Head, L0, L1),
-  ws_(L1, L2),
+clause(clause(Head, Body), L0, L) :-
+  struct(Head, L0, L1),
+  ws(L1, L2),
   \=(L2, \.(\:, \.(\-, L3))),
-  ws_(L3, L4),
-  terms_(Body, L4, L5),
-  ws_(L5, L6),
+  ws(L3, L4),
+  terms(Body, L4, L5),
+  ws(L5, L6),
   \=(L6, \.(\., L)).
-clause_(clause(Head, []), L0, L) :-
-  struct_(Head, L0, L1),
-  ws_(L1, L2),
+clause(clause(Head, []), L0, L) :-
+  struct(Head, L0, L1),
+  ws(L1, L2),
   \=(L2, \.(\., L)).
 
-terms_(\.(Term, Terms), L0, L) :-
-  term_(Term, L0, L1),
-  ws_(L1, L2),
+terms(\.(Term, Terms), L0, L) :-
+  term(Term, L0, L1),
+  ws(L1, L2),
   \=(L2, \.(\, , L3)),
-  ws_(L3, L4),
-  terms_(Terms, L4, L).
-terms_(\.(Term, []), L0, L) :-
-  term_(Term, L0, L).
+  ws(L3, L4),
+  terms(Terms, L4, L).
+terms(\.(Term, []), L0, L) :-
+  term(Term, L0, L).
 
-term_(Term, L0, L) :-
-  struct_(Term, L0, L).
-term_(Term, L0, L) :-
-  atom_(Term, L0, L).
-term_(Term, L0, L) :-
-  var_(Term, L0, L).
+term(Term, L0, L) :-
+  struct(Term, L0, L).
+term(Term, L0, L) :-
+  atom(Term, L0, L).
+term(Term, L0, L) :-
+  var(Term, L0, L).
 
-struct_(struct(Name, Args), L0, L) :-
-  atom_(atom(Name), L0, L1),
+struct(struct(Name, Args), L0, L) :-
+  atom(atom(Name), L0, L1),
   \=(L1, \.(\(, L2)),
-  ws_(L2, L3),
-  terms_(Args, L3, L4),
-  ws_(L4, L5),
+  ws(L2, L3),
+  terms(Args, L3, L4),
+  ws(L4, L5),
   \=(L5, \.(\), L)).
-struct_(struct(Name, []), L0, L) :-
-  atom_(atom(Name), L0, L1),
+struct(struct(Name, []), L0, L) :-
+  atom(atom(Name), L0, L1),
   \=(L1, \.(\(, L2)),
-  ws_(L2, L3),
+  ws(L2, L3),
   \=(L3, \.(\), L)).
 
-atom_(atom(Name), L0, L) :-
+atom(atom(Name), L0, L) :-
   \=(L0, \.(Char, L1)),
   atom_start(Char),
-  ident_chars_(Chars, L1, L),
-  atom_chars_(Name, \.(Char, Chars)).
-atom_(atom(Name), L0, L) :-
+  ident_chars(Chars, L1, L),
+  atom_chars(Name, \.(Char, Chars)).
+atom(atom(Name), L0, L) :-
   \=(L0, \.(\\, \.(Char, L))),
-  atom_chars_(Name, \.(Char, [])).
-atom_(atom(Name), L0, L) :-
+  atom_chars(Name, \.(Char, [])).
+atom(atom(Name), L0, L) :-
   \=(L0, \.(\[, \.(\], L))),
-  atom_chars_(Name, \.(\[, \.(\], []))).
+  atom_chars(Name, \.(\[, \.(\], []))).
 
-var_(var(Name), L0, L) :-
+var(var(Name), L0, L) :-
   \=(L0, \.(Char, L1)),
   var_start(Char),
-  ident_chars_(Chars, L1, L),
-  atom_chars_(Name, \.(Char, Chars)).
+  ident_chars(Chars, L1, L),
+  atom_chars(Name, \.(Char, Chars)).
 
-ident_chars_(\.(Char, Chars), L0, L) :-
+ident_chars(\.(Char, Chars), L0, L) :-
   \=(L0, \.(Char, L1)),
   ident(Char),
-  ident_chars_(Chars, L1, L).
-ident_chars_([], L, L).
+  ident_chars(Chars, L1, L).
+ident_chars([], L, L).
 
-ws_(L0, L) :-
+ws(L0, L) :-
   \=(L0, \.(Char, L1)),
   space(Char),
-  ws_(L1, L).
-ws_(L, L).
+  ws(L1, L).
+ws(L, L).
 
 atom_start(Char) :-
   ascii_lower(Char).

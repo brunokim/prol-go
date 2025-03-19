@@ -22,9 +22,9 @@ func TestBootstrapParsesItself(t *testing.T) {
 	_chars, _rest0 := prol.MustVar("_Chars"), prol.MustVar("_Rest0")
 	query := prol.Clause{
 		prol.Struct{"query", nil},
-		prol.Struct{"atom_chars_", []prol.Term{prol.Atom(bootstrap), _chars}},
-		prol.Struct{"database_", []prol.Term{prol.MustVar("Rules"), _chars, _rest0}},
-		prol.Struct{"ws_", []prol.Term{_rest0, prol.MustVar("Rest")}},
+		prol.Struct{"atom_chars", []prol.Term{prol.Atom(bootstrap), _chars}},
+		prol.Struct{"database", []prol.Term{prol.MustVar("Rules"), _chars, _rest0}},
+		prol.Struct{"ws", []prol.Term{_rest0, prol.MustVar("Rest")}},
 	}
 	solution, err := db.FirstSolution(query, "max_depth", len(bootstrap)*10)
 	if err != nil {
