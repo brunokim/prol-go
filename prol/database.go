@@ -57,19 +57,7 @@ func (db *Database) Solve(query Clause, opts ...any) iter.Seq[Solution] {
 	env := make(map[Var]*Ref)
 	query = varToRef(query, env).(Clause)
 	s := &solver{db: db, env: env}
-	for i := 0; i < len(opts); {
-		switch opts[i] {
-		case "trace":
-			s.trace = true
-			i += 1
-		case "max_depth":
-			s.max_depth = opts[i+1].(int)
-			i += 2
-		default:
-			log.Printf("Database.Solve: unknown option at %d: %v\n", i, opts[i])
-			i += 1
-		}
-	}
+	s.readOpts(opts)
 	return func(yield func(Solution) bool) {
 		s.yield = yield
 		s.dfs(query)
@@ -133,9 +121,30 @@ type solver struct {
 	trail []*Ref
 	yield func(Solution) bool
 	// Opts
-	trace     bool
-	depth     int
-	max_depth int
+	trace         bool
+	depth         int
+	max_depth     int
+	num_solutions int
+	limit         int
+}
+
+func (s *solver) readOpts(opts []any) {
+	for i := 0; i < len(opts); {
+		switch opts[i] {
+		case "trace":
+			s.trace = true
+			i += 1
+		case "max_depth":
+			s.max_depth = opts[i+1].(int)
+			i += 2
+		case "limit":
+			s.limit = opts[i+1].(int)
+			i += 2
+		default:
+			log.Printf("unknown option at %d: %v\n", i, opts[i])
+			i += 1
+		}
+	}
 }
 
 func (s *solver) Assert(rule Rule) {
@@ -151,10 +160,14 @@ func (s *solver) dfs(goals []Struct) bool {
 			}
 			m[x] = RefToTerm(ref)
 		}
+		s.num_solutions++
+		if s.limit > 0 && s.num_solutions > s.limit {
+			log.Println("limit of number of solutions reached")
+			return false
+		}
 		return s.yield(m)
 	}
 	goal, rest := goals[0], goals[1:]
-	// log.Println(">>> goal:", goal.Functor())
 	if s.trace {
 		log.Println(">>> goal:", goal.Functor())
 	}
@@ -276,10 +289,18 @@ const (
 
 func (db *Database) String() string {
 	var b strings.Builder
-	for i, f := range db.functors {
-		if i > 0 {
+	var cnt int
+	for _, f := range db.functors {
+		if len(db.index0[f]) == 1 {
+			rule := db.index0[f][0]
+			if _, ok := rule.(Builtin); ok {
+				continue
+			}
+		}
+		if cnt > 0 {
 			b.WriteString("\n\n")
 		}
+		cnt++
 		fmt.Fprintf(&b, "%% %v\n", f)
 		for j, rule := range db.index0[f] {
 			if j > 0 {
