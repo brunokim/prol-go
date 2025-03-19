@@ -16,6 +16,11 @@ var (
 		// nat(s(X)) :- nat(X).
 		clause(s("nat", a("0"))),
 		clause(s("nat", s("s", v("X"))), s("nat", v("X"))),
+		// add(0, X, X).
+		// add(s(X), Y, s(Z)) :- add(X, Y, Z).
+		clause(s("add", a("0"), v("X"), v("X"))),
+		clause(s("add", s("s", v("X")), v("Y"), s("s", v("Z"))),
+			s("add", v("X"), v("Y"), v("Z"))),
 	}
 )
 
@@ -42,6 +47,25 @@ func TestSolve(t *testing.T) {
 				{"X": s("s", s("s", a("0")))},
 				{"X": s("s", s("s", s("s", a("0"))))},
 				{"X": s("s", s("s", s("s", s("s", a("0")))))},
+			},
+		},
+		{
+			"All combinations of three numbers that sum to 3",
+			clause(s("query"),
+				s("add", v("_Tmp"), v("Z"), s("s", s("s", s("s", a("0"))))),
+				s("add", v("X"), v("Y"), v("_Tmp"))),
+			nil,
+			[]prol.Solution{
+				{"X": a("0"), "Y": a("0"), "Z": s("s", s("s", s("s", a("0"))))},
+				{"X": a("0"), "Y": s("s", a("0")), "Z": s("s", s("s", a("0")))},
+				{"X": s("s", a("0")), "Y": a("0"), "Z": s("s", s("s", a("0")))},
+				{"X": a("0"), "Y": s("s", s("s", a("0"))), "Z": s("s", a("0"))},
+				{"X": s("s", a("0")), "Y": s("s", a("0")), "Z": s("s", a("0"))},
+				{"X": s("s", s("s", a("0"))), "Y": a("0"), "Z": s("s", a("0"))},
+				{"X": a("0"), "Y": s("s", s("s", s("s", a("0")))), "Z": a("0")},
+				{"X": s("s", a("0")), "Y": s("s", s("s", a("0"))), "Z": a("0")},
+				{"X": s("s", s("s", a("0"))), "Y": s("s", a("0")), "Z": a("0")},
+				{"X": s("s", s("s", s("s", a("0")))), "Y": a("0"), "Z": a("0")},
 			},
 		},
 	}
