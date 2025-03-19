@@ -66,7 +66,7 @@ var kb = prol.NewKnowledgeBase(
 		st("clause", st("clause", var_("Head"), var_("Body"))),
 		st("struct", var_("Head")),
 		st("ws"),
-		prol.StringToTerm(":-").(prol.Struct),
+		prol.FromString(":-").(prol.Struct),
 		st("ws"),
 		st("structs", var_("Body")),
 		st("ws"),
@@ -208,8 +208,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	return
 	fmt.Println(kb)
 	fmt.Println()
 	runQuery("First 5 natural numbers",
@@ -225,36 +223,36 @@ func main() {
 		[]prol.Struct{st("member", atom("a"), var_("List"))},
 		"limit", 5)
 	runQuery("Parsing atom", []prol.Struct{
-		st("atom", var_("Atom1"), prol.StringToTerm("a"), atom("[]")),
-		st("atom", var_("Atom2"), prol.StringToTerm("ab"), atom("[]")),
-		st("atom", var_("Atom3"), prol.StringToTerm("a1"), atom("[]")),
-		st("atom", var_("Atom4"), prol.StringToTerm("aX"), atom("[]")),
-		st("atom", var_("Atom5"), prol.StringToTerm("a_"), atom("[]")),
-		st("atom", var_("Atom6"), prol.StringToTerm("foo_123"), atom("[]")),
+		st("atom", var_("Atom1"), prol.FromString("a"), atom("[]")),
+		st("atom", var_("Atom2"), prol.FromString("ab"), atom("[]")),
+		st("atom", var_("Atom3"), prol.FromString("a1"), atom("[]")),
+		st("atom", var_("Atom4"), prol.FromString("aX"), atom("[]")),
+		st("atom", var_("Atom5"), prol.FromString("a_"), atom("[]")),
+		st("atom", var_("Atom6"), prol.FromString("foo_123"), atom("[]")),
 	})
 	runQuery("Parsing var", []prol.Struct{
-		st("var", var_("Var1"), prol.StringToTerm("X"), atom("[]")),
-		st("var", var_("Var2"), prol.StringToTerm("Y"), atom("[]")),
-		st("var", var_("Var3"), prol.StringToTerm("Xa"), atom("[]")),
-		st("var", var_("Var4"), prol.StringToTerm("X1"), atom("[]")),
-		st("var", var_("Var5"), prol.StringToTerm("Foo123"), atom("[]")),
+		st("var", var_("Var1"), prol.FromString("X"), atom("[]")),
+		st("var", var_("Var2"), prol.FromString("Y"), atom("[]")),
+		st("var", var_("Var3"), prol.FromString("Xa"), atom("[]")),
+		st("var", var_("Var4"), prol.FromString("X1"), atom("[]")),
+		st("var", var_("Var5"), prol.FromString("Foo123"), atom("[]")),
 	})
 	runQuery("Parsing struct", []prol.Struct{
-		st("struct", var_("Struct1"), prol.StringToTerm("f()"), atom("[]")),
-		st("struct", var_("Struct2"), prol.StringToTerm("f( )"), atom("[]")),
-		st("struct", var_("Struct3"), prol.StringToTerm("f(a)"), atom("[]")),
-		st("struct", var_("Struct4"), prol.StringToTerm("f(Z)"), atom("[]")),
-		st("struct", var_("Struct5"), prol.StringToTerm("f(g())"), atom("[]")),
-		st("struct", var_("Struct6"), prol.StringToTerm("f(b,c)"), atom("[]")),
-		st("struct", var_("Struct7"), prol.StringToTerm("f( b , c )"), atom("[]")),
-		st("struct", var_("Struct8"), prol.StringToTerm("foo(atom, Var, bar(Y,c,d))"), atom("[]")),
+		st("struct", var_("Struct1"), prol.FromString("f()"), atom("[]")),
+		st("struct", var_("Struct2"), prol.FromString("f( )"), atom("[]")),
+		st("struct", var_("Struct3"), prol.FromString("f(a)"), atom("[]")),
+		st("struct", var_("Struct4"), prol.FromString("f(Z)"), atom("[]")),
+		st("struct", var_("Struct5"), prol.FromString("f(g())"), atom("[]")),
+		st("struct", var_("Struct6"), prol.FromString("f(b,c)"), atom("[]")),
+		st("struct", var_("Struct7"), prol.FromString("f( b , c )"), atom("[]")),
+		st("struct", var_("Struct8"), prol.FromString("foo(atom, Var, bar(Y,c,d))"), atom("[]")),
 	})
 	runQuery("Parsing clause", []prol.Struct{
-		st("clause", var_("Clause1"), prol.StringToTerm("f()."), atom("[]")),
-		st("clause", var_("Clause2"), prol.StringToTerm("f(a)."), atom("[]")),
-		st("clause", var_("Clause3"), prol.StringToTerm("f(a):-g()."), atom("[]")),
-		st("clause", var_("Clause4"), prol.StringToTerm("f(a):-g(),h()."), atom("[]")),
-		st("clause", var_("Clause4"), prol.StringToTerm("f(a) :-\n  g(),\n  h()."), atom("[]")),
+		st("clause", var_("Clause1"), prol.FromString("f()."), atom("[]")),
+		st("clause", var_("Clause2"), prol.FromString("f(a)."), atom("[]")),
+		st("clause", var_("Clause3"), prol.FromString("f(a):-g()."), atom("[]")),
+		st("clause", var_("Clause4"), prol.FromString("f(a):-g(),h()."), atom("[]")),
+		st("clause", var_("Clause4"), prol.FromString("f(a) :-\n  g(),\n  h()."), atom("[]")),
 	})
 	runQuery("Assert clause", []prol.Struct{
 		st("assertz", st("clause", st("struct", atom("dummy"), atom("[]")), atom("[]"))),

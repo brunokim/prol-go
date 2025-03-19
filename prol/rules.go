@@ -39,13 +39,13 @@ func (c DCG) toClause() Clause {
 	var i int
 	for _, s := range c[1:] {
 		// List
-		terms, tail := TermToList(s)
+		terms, tail := ToList(s)
 		if len(terms) > 0 {
 			if tail != Atom("[]") {
 				panic(fmt.Sprintf("invalid DCG"))
 			}
 			curr, next := Var(fmt.Sprintf("L%d", i)), Var(fmt.Sprintf("L%d", i+1))
-			ss = append(ss, Struct{"=", []Term{curr, ListToTerm(terms, next)}})
+			ss = append(ss, Struct{"=", []Term{curr, FromImproperList(terms, next)}})
 			i++
 			continue
 		}
@@ -142,7 +142,7 @@ func (kb *KnowledgeBase) MoveClauseInPredicate(f Functor, from int, to int) bool
 		copy(newRules[:j], rules[:j])
 		newRules[j] = rule
 		copy(newRules[j+1:i+1], rules[j:i])
-		copy(newRules[i:], rules[i:])
+		copy(newRules[i+1:], rules[i:])
 		kb.index0[f] = newRules
 	}
 	fmt.Println(kb.index0[f])

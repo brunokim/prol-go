@@ -99,6 +99,8 @@ func (s Struct) Functor() Functor {
 
 // --- Atom ---
 
+const Nil = Atom("[]")
+
 // IsChar returns whether this atom has a single char.
 func (a Atom) IsChar() bool {
 	return utf8.RuneCountInString(string(a)) == 1
@@ -106,8 +108,8 @@ func (a Atom) IsChar() bool {
 
 // --- Conversion between term and list ---
 
-// TermToList unwraps a linked list of cons cells into a list of terms.
-func TermToList(t Term) (terms []Term, tail Term) {
+// ToList unwraps a linked list of cons cells into a list of terms.
+func ToList(t Term) (terms []Term, tail Term) {
 	s, ok := t.(Struct)
 	for ok && s.Name == "." && len(s.Args) == 2 {
 		terms = append(terms, s.Args[0])
@@ -118,8 +120,13 @@ func TermToList(t Term) (terms []Term, tail Term) {
 	return
 }
 
-// ListToTerm wraps the given list of terms into a linked list.
-func ListToTerm(terms []Term, tail Term) Term {
+// FromList wraps the given list of terms into a linked list with a proper tail.
+func FromList(terms []Term) Term {
+	return FromImproperList(terms, Nil)
+}
+
+// FromImproperList wraps the given list of terms into a linked list with a specified tail.
+func FromImproperList(terms []Term, tail Term) Term {
 	for i := len(terms) - 1; i >= 0; i-- {
 		t := terms[i]
 		tail = Struct{".", []Term{t, tail}}
@@ -127,19 +134,19 @@ func ListToTerm(terms []Term, tail Term) Term {
 	return tail
 }
 
-// StringToTerm converts a string to a linked list of single-char atoms.
-func StringToTerm(s string) Term {
+// FromString converts a string to a linked list of single-char atoms.
+func FromString(s string) Term {
 	runes := []rune(s)
 	terms := make([]Term, len(runes))
 	for i, r := range runes {
 		terms[i] = Atom(string(r))
 	}
-	return ListToTerm(terms, Atom("[]"))
+	return FromList(terms)
 }
 
-// TermToString converts an atom list term to a Go string.
-func TermToString(t Term) (string, error) {
-	chars, tail := TermToList(t)
+// ToString converts an atom list term to a Go string.
+func ToString(t Term) (string, error) {
+	chars, tail := ToList(t)
 	if tail != Atom("[]") {
 		return "", fmt.Errorf("not a proper list: %v", t)
 	}
@@ -195,7 +202,7 @@ func (t Var) String() string {
 }
 
 func (t Struct) String() string {
-	terms, tail := TermToList(t)
+	terms, tail := ToList(t)
 	if len(terms) > 0 {
 		return listToString(terms, tail)
 	}

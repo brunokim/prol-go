@@ -42,13 +42,13 @@ func atomToCharsBuiltin(s Solver, goal Struct) ([]Struct, bool) {
 	for i, ch := range atom {
 		chars[i] = Atom(string(ch))
 	}
-	term := ListToTerm(chars, Atom("[]"))
+	term := FromList(chars)
 	return nil, s.Unify(term, goal.Args[1])
 }
 
 func charsToAtomBuiltin(s Solver, goal Struct) ([]Struct, bool) {
 	arg1 := Deref(goal.Args[0])
-	text, err := TermToString(arg1)
+	text, err := ToString(arg1)
 	if err != nil {
 		log.Printf("chars->atom/2: arg #1: %v", err)
 		return nil, false

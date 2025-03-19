@@ -153,7 +153,7 @@ func checkFunctor(s Struct, f Functor) error {
 }
 
 func checkProperList(term Term) ([]Term, error) {
-	xs, tail := TermToList(term)
+	xs, tail := ToList(term)
 	if tail != Atom("[]") {
 		return nil, fmt.Errorf("not a proper list")
 	}

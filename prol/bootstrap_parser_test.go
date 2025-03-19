@@ -30,7 +30,7 @@ func TestBootstrapParsesItself(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	rulesAST, _ := prol.TermToList(solution["Rules"])
+	rulesAST, _ := prol.ToList(solution["Rules"])
 	var rules []prol.Rule
 	for i, ruleAST := range rulesAST {
 		rule, err := prol.CompileRule(ruleAST)
@@ -41,7 +41,7 @@ func TestBootstrapParsesItself(t *testing.T) {
 			t.Log(rule)
 		}
 	}
-	rest, _ := prol.TermToList(solution["Rest"])
+	rest, _ := prol.ToList(solution["Rest"])
 	if len(rest) > 0 {
 		t.Errorf("trailing characters: %v", rest[:min(len(rest), 50)])
 		return

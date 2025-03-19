@@ -37,7 +37,7 @@ func (kb *KnowledgeBase) FirstSolution(query Clause, opts ...any) (Solution, err
 }
 
 func (kb *KnowledgeBase) Interpret(text string, opts ...any) error {
-	chars := StringToTerm(text)
+	chars := FromString(text)
 	rest := MustVar("Rest")
 	for {
 		_rest0, rule := MustVar("_Rest0"), MustVar("Rule")
@@ -57,7 +57,7 @@ func (kb *KnowledgeBase) Interpret(text string, opts ...any) error {
 	solution, err := kb.FirstSolution(Clause{
 		Struct{"query", nil},
 		Struct{"ws_", []Term{chars, rest}}}, opts...)
-	trailing, err := TermToString(solution[rest])
+	trailing, err := ToString(solution[rest])
 	if err != nil {
 		return err
 	}
