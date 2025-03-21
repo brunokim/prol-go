@@ -81,8 +81,8 @@ func (db *Database) Interpret(text string, opts ...any) error {
 		_rest0, rule := MustVar("_Rest0"), MustVar("Rule")
 		query := Clause{
 			Struct{"query", nil},
-			Struct{"ws_", []Term{chars, _rest0}},
-			Struct{"rule_", []Term{rule, _rest0, rest}},
+			Struct{"ws", []Term{chars, _rest0}},
+			Struct{"parse_rule", []Term{rule, _rest0, rest}},
 			Struct{"assertz", []Term{rule}},
 		}
 		solution, err := db.FirstSolution(query, opts...)
@@ -94,7 +94,7 @@ func (db *Database) Interpret(text string, opts ...any) error {
 	fmt.Println("--- finished asserts ---")
 	solution, err := db.FirstSolution(Clause{
 		Struct{"query", nil},
-		Struct{"ws_", []Term{chars, rest}}}, opts...)
+		Struct{"ws", []Term{chars, rest}}}, opts...)
 	trailing, err := ToString(solution[rest])
 	if err != nil {
 		return err

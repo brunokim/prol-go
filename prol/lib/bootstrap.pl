@@ -1,4 +1,14 @@
+doc(this_is_the_bootstrap_for_prolog).
+doc(we_dont_have_comments_yet, so_its_necessary_to_use_plain_atoms_for_documentation).
+
+
+doc(we_call_queries_as_clauses_with_a, query(), head).
+doc(we_need_to_have_this_head_defined_in_the_bootstrap).
+
 query().
+
+
+doc(atom_chars, converts_between_an_atom_and_a_list_of_chars).
 
 atom_chars(Atom, Chars) :-
   var(Atom),
@@ -8,6 +18,9 @@ atom_chars(Atom, Chars) :-
   atom(Atom),
   atom_to_chars(Atom, Chars).
 
+
+doc(int_chars, converts_between_an_int_and_a_list_of_chars).
+
 int_chars(Int, Chars) :-
   var(Int),
   is_char_list(Chars),
@@ -16,88 +29,146 @@ int_chars(Int, Chars) :-
   int(Int),
   int_to_chars(Int, Chars).
 
+
+doc(is_char_list, tests_whether_list_is_composed_only_of_one_char_atoms).
+
 is_char_list(\.(Char, Chars)) :-
   atom_length(Char, 1),
   is_char_list(Chars).
 is_char_list([]).
 
-database(\.(Rule, Rules), L0, L) :-
-  rule(Rule, L0, L1),
+
+doc(parse_database, reads_a_sequence_of_rules_from_the_difference_list).
+
+parse_database(\.(Rule, Rules), L0, L) :-
+  parse_rule(Rule, L0, L1),
   ws(L1, L2),
-  database(Rules, L2, L).
-database(\.(Rule, []), L0, L) :-
-  rule(Rule, L0, L).
+  parse_database(Rules, L2, L).
+parse_database(\.(Rule, []), L0, L) :-
+  parse_rule(Rule, L0, L).
 
-rule(Rule, L0, L) :-
-  clause(Rule, L0, L).
 
-clause(clause(Head, Body), L0, L) :-
-  struct(Head, L0, L1),
+doc(parse_rule, parses_a_rule).
+doc(for_now_we_only_have_one_rule_type,
+    but_we_will_use_this_as_a_hook_for_other_types_later).
+
+parse_rule(Rule, L0, L) :-
+  parse_clause(Rule, L0, L).
+
+
+doc(parse_clause, parses_a_fact_or_clause).
+
+parse_clause(clause(Head, Body), L0, L) :-
+  parse_struct(Head, L0, L1),
   ws(L1, L2),
   \=(L2, \.(\:, \.(\-, L3))),
   ws(L3, L4),
-  terms(Body, L4, L5),
+  parse_goals(Body, L4, L5),
   ws(L5, L6),
   \=(L6, \.(\., L)).
-clause(clause(Head, []), L0, L) :-
-  struct(Head, L0, L1),
+parse_clause(clause(Head, []), L0, L) :-
+  parse_goal(Head, L0, L1),
   ws(L1, L2),
   \=(L2, \.(\., L)).
 
-terms(\.(Term, Terms), L0, L) :-
-  term(Term, L0, L1),
+
+doc(parse_goals, parses_a_sequence_of_comma_separated_clause_goals).
+
+parse_goals(\.(Goal, Goals), L0, L) :-
+  parse_goal(Goal, L0, L1),
   ws(L1, L2),
   \=(L2, \.(\, , L3)),
   ws(L3, L4),
-  terms(Terms, L4, L).
-terms(\.(Term, []), L0, L) :-
-  term(Term, L0, L).
+  parse_goals(Goals, L4, L).
+parse_goals(\.(Goal, []), L0, L) :-
+  parse_goal(Goal, L0, L).
 
-term(Term, L0, L) :-
-  struct(Term, L0, L).
-term(Term, L0, L) :-
-  atom(Term, L0, L).
-term(Term, L0, L) :-
-  var(Term, L0, L).
-term(Term, L0, L) :-
-  int(Term, L0, L).
 
-struct(struct(Name, Args), L0, L) :-
-  atom(atom(Name), L0, L1),
+doc(parse_goal, parses_a_goal_term_and_convert_to_a_struct).
+
+parse_goal(Struct, L0, L) :-
+  parse_struct(Struct, L0, L).
+parse_goal(struct(Atom, []), L0, L) :-
+  parse_atom(atom(Atom), L0, L).
+parse_goal(struct(call, \.(X, [])), L0, L) :-
+  parse_var(X, L0, L).
+
+
+doc(parse_terms, parses_a_sequence_of_comma_separated_terms).
+
+parse_terms(\.(Term, Terms), L0, L) :-
+  parse_term(Term, L0, L1),
+  ws(L1, L2),
+  \=(L2, \.(\, , L3)),
+  ws(L3, L4),
+  parse_terms(Terms, L4, L).
+parse_terms(\.(Term, []), L0, L) :-
+  parse_term(Term, L0, L).
+
+
+doc(parse_term, parses_a_term).
+
+parse_term(Term, L0, L) :-
+  parse_struct(Term, L0, L).
+parse_term(Term, L0, L) :-
+  parse_atom(Term, L0, L).
+parse_term(Term, L0, L) :-
+  parse_var(Term, L0, L).
+parse_term(Term, L0, L) :-
+  parse_int(Term, L0, L).
+
+
+doc(parse_struct, parses_a_struct).
+
+parse_struct(struct(Name, Args), L0, L) :-
+  parse_atom(atom(Name), L0, L1),
   \=(L1, \.(\(, L2)),
   ws(L2, L3),
-  terms(Args, L3, L4),
+  parse_terms(Args, L3, L4),
   ws(L4, L5),
   \=(L5, \.(\), L)).
-struct(struct(Name, []), L0, L) :-
-  atom(atom(Name), L0, L1),
+parse_struct(struct(Name, []), L0, L) :-
+  parse_atom(atom(Name), L0, L1),
   \=(L1, \.(\(, L2)),
   ws(L2, L3),
   \=(L3, \.(\), L)).
 
-atom(atom(Name), L0, L) :-
+
+doc(parse_atom, parses_an_atom).
+doc(an_atom_may_be_a_symbol, escaped_char, or_nil_atom).
+
+parse_atom(atom(Name), L0, L) :-
   \=(L0, \.(Char, L1)),
   atom_start(Char),
   ident_chars(Chars, L1, L),
   atom_chars(Name, \.(Char, Chars)).
-atom(atom(Name), L0, L) :-
+parse_atom(atom(Name), L0, L) :-
   \=(L0, \.(\\, \.(Char, L))),
   atom_chars(Name, \.(Char, [])).
-atom(atom(Name), L0, L) :-
+parse_atom(atom(Name), L0, L) :-
   \=(L0, \.(\[, \.(\], L))),
   atom_chars(Name, \.(\[, \.(\], []))).
 
-var(var(Name), L0, L) :-
+
+doc(parse_var, parses_a_var).
+
+parse_var(var(Name), L0, L) :-
   \=(L0, \.(Char, L1)),
   var_start(Char),
   ident_chars(Chars, L1, L),
   atom_chars(Name, \.(Char, Chars)).
 
-int(int(Int), L0, L) :-
+
+doc(parse_int, parses_an_integer).
+
+parse_int(int(Int), L0, L) :-
   \=(L0, \.(Char, L1)),
   ascii_digit(Char),
   digits(Chars, L1, L),
   int_chars(Int, \.(Char, Chars)).
+
+
+doc(ident_chars, parses_a_sequence_of_identifier_chars).
 
 ident_chars(\.(Char, Chars), L0, L) :-
   \=(L0, \.(Char, L1)),
@@ -105,17 +176,26 @@ ident_chars(\.(Char, Chars), L0, L) :-
   ident_chars(Chars, L1, L).
 ident_chars([], L, L).
 
+
+doc(digits, parses_a_sequence_of_digits).
+
 digits(\.(Char, Chars), L0, L) :-
   \=(L0, \.(Char, L1)),
   ascii_digit(Char),
   digits(Chars, L1, L).
 digits([], L, L).
 
+
+doc(ws, parses_whitespace).
+
 ws(L0, L) :-
   \=(L0, \.(Char, L1)),
   space(Char),
   ws(L1, L).
 ws(L, L).
+
+
+doc(facts_about_characters).
 
 atom_start(Char) :-
   ascii_lower(Char).

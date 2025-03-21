@@ -111,17 +111,19 @@ func atomLengthBuiltin(s Solver, goal Struct) ([]Struct, bool) {
 
 func assertzBuiltin(s Solver, goal Struct) ([]Struct, bool) {
 	arg1 := Deref(goal.Args[0])
-	clause, err := CompileRule(arg1)
+	rule, err := CompileRule(arg1)
 	if err != nil {
 		log.Printf("assertz/1: %v", err)
 		return nil, false
 	}
-	log.Println("asserting\n", clause)
-	if clause.Indicator() == (Indicator{"directive", 0}) {
+	log.Println("asserting\n", rule)
+	if rule.Indicator() == (Indicator{"directive", 0}) {
 		// Execute directive immediately.
-		return clause.(Clause).Body(), true
+		// TODO: consider other rule types.
+		clause := varToRef(rule, map[Var]*Ref{}).(Clause)
+		return clause.Body(), true
 	}
-	s.Assert(clause)
+	s.Assert(rule)
 	return nil, true
 }
 
@@ -137,7 +139,8 @@ func getPredicateBuiltin(s Solver, goal Struct) ([]Struct, bool) {
 	for i, rule := range rules {
 		terms[i] = rule.ToAST()
 	}
-	return nil, s.Unify(FromList(terms), goal.Args[1])
+	x := FromList(terms)
+	return nil, s.Unify(x, goal.Args[1])
 }
 
 func putPredicateBuiltin(s Solver, goal Struct) ([]Struct, bool) {

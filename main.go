@@ -203,13 +203,14 @@ func runQuery(title string, query []prol.Struct, opts ...any) {
 }
 
 func main() {
-	bootstrap, err := prol.Bootstrap()
-	fmt.Println(bootstrap)
+	prelude, err := prol.Prelude()
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(db)
+	fmt.Println(prelude)
 	fmt.Println()
+	return
+
 	runQuery("First 5 natural numbers",
 		[]prol.Struct{st("nat", var_("X"))},
 		"limit", 5)
