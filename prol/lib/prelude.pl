@@ -209,4 +209,4 @@ test_dcg([]) --> [].
 test_dcg(1) --> an_atom.
 test_dcg(X) --> a_struct(X).
 test_dcg(P, Q) --> [P], test_dcg(Q).
-test_dcg(X, Y) --> X, ":", { test(X, _Z), foo(_Z, Y) }.
+test_dcg(a(X), Y) --> X, ":", { test(X, _Z), foo(_Z, Y) }.
