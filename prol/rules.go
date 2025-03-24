@@ -49,6 +49,10 @@ func (c DCG) toClause() Clause {
 			i++
 			continue
 		}
+		// Empty list
+		if tail == Nil {
+			continue
+		}
 		// Embedded code
 		if s.Name == "{}" {
 			for _, arg := range s.Args {

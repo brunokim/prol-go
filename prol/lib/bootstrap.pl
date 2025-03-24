@@ -59,7 +59,7 @@ parse_rule(Rule, L0, L) :-
 doc(parse_clause, parses_a_fact_or_clause).
 
 parse_clause(clause(Head, Body), L0, L) :-
-  parse_struct(Head, L0, L1),
+  parse_goal(Head, L0, L1),
   ws(L1, L2),
   \=(L2, \.(\:, \.(\-, L3))),
   ws(L3, L4),

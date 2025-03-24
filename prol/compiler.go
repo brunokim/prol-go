@@ -12,6 +12,8 @@ func CompileRule(ast Term) (Rule, error) {
 	switch ruleAST.Indicator() {
 	case Indicator{"clause", 2}:
 		return compileClause(ruleAST)
+	case Indicator{"dcg", 2}:
+		return compileDCG(ruleAST)
 	default:
 		return nil, fmt.Errorf("CompileRule: unimplemented rule type: %v", ruleAST.Indicator())
 	}
@@ -35,6 +37,27 @@ func CompileIndicator(ast Term) (Indicator, error) {
 		return Indicator{}, fmt.Errorf("CompileIndicator: arg #2: %w", err)
 	}
 	return Indicator{name, int(arity)}, nil
+}
+
+func compileDCG(ast Struct) (Rule, error) {
+	arg1, arg2 := Deref(ast.Args[0]), Deref(ast.Args[1])
+	headAST, err := checkStruct(arg1)
+	if err != nil {
+		return nil, fmt.Errorf("clause arg #1: %w", err)
+	}
+	bodyAST, err := checkProperList(arg2)
+	if err != nil {
+		return nil, fmt.Errorf("clause arg #2: %w", err)
+	}
+	head, err := compileStruct(headAST)
+	if err != nil {
+		return nil, fmt.Errorf("head: %w", err)
+	}
+	body, err := compileStructs(bodyAST)
+	if err != nil {
+		return nil, fmt.Errorf("body: %w", err)
+	}
+	return DCG(append([]Struct{head}, body...)), nil
 }
 
 func compileClause(ast Struct) (Rule, error) {
