@@ -124,7 +124,7 @@ parse_quoted_chars(Quote, Chars, L0, L) :-
   parse_quoted_chars0(Quote, Chars, L1, L).
 
 parse_quoted_chars0(Quote, [Char|Chars], L0, L) :-
-  \=(L0, [Char|L1]),
+\=(L0, [Char|L1]),
   neq(Char, Quote),
   parse_quoted_chars0(Quote, Chars, L1, L).
 parse_quoted_chars0(Quote, [Quote|Chars], L0, L) :-
@@ -210,3 +210,195 @@ test_dcg(1) --> an_atom.
 test_dcg(X) --> a_struct(X).
 test_dcg(P, Q) --> [P], test_dcg(Q).
 test_dcg(a(X), Y) --> X, ":", { test(X, _Z), foo(_Z, Y) }.
+
+
+% parse_directive//1 parses a directive, that is, a clause for immediate execution.
+
+parse_directive(clause(struct(directive, []), Goals)) -->
+    ":-",
+    ws,
+    parse_goals(Goals),
+    ws,
+    ".".
+
+parse_rule(Rule) --> parse_directive(Rule).
+
+:- print('directive parsed').
+
+
+/**
+ * Expressions
+ *
+ * It's possible to express a computer program solely as functors, but it is a bit
+ * contrary to our mathematical education and how most human languages are structured.
+ *
+ * For example, now we write
+ *
+ *     '='(T1, T2)
+ *
+ * but speak
+ *
+ *     T1 unifies with T2.
+ *
+ * and would like to write
+ *
+ *     T1 = T2.
+ *
+ * We will add suport to create expressions with any number of operators, with several
+ * levels of precedence. An expression like
+ *
+ *     1 / 2 * 3 + 4 - 5 ^ -6 < +7 % 8
+ *
+ * will be parsed as if with the following parenthesis
+ *
+ *     ((((1 / 2) * 3) + 4) - (5 ^ (- 6))) < ((+ 7) % 8)
+ *
+ * and eventually become this nested functor:
+ *
+ *     '<'('-'('+'('*'('/'(1, 2), 3), 4), '^'(5, '-'(6))), '%'('+'(7), 8))
+ */
+
+% Our first step is allowing symbolic atoms like mathematical operators.
+% Not all operators need to be symbolic, but many are.
+
+ascii_symbol('=').
+ascii_symbol('<').
+ascii_symbol('>').
+ascii_symbol('+').
+ascii_symbol('-').
+ascii_symbol('*').
+ascii_symbol('/').
+ascii_symbol('^').
+ascii_symbol('\').
+
+parse_symbol(atom(Name)) -->
+  symbol_chars(Chars),
+  { atom_chars(Name, Chars) }.
+
+symbol_chars([Char|Chars]) -->
+  [Char],
+  { ascii_symbol(Char) },
+  symbol_chars(Chars).
+symbol_chars([Char]) -->
+  [Char],
+  { ascii_symbol(Char) }.
+
+parse_atom(Atom) -->
+  parse_symbol(Atom).
+
+
+test_parse_symbol(=, ==, =<, >=, ++, **, -*/*-).
+
+% Prolog allows for dynamic and user-defined operators. 
+% They must be registered as a fact op/3 like op(600, xfy, +), where the args mean
+% - the operator precedence.
+% - the operator position and associativity type
+% - the operator atom
+%
+% An operator position may be suffix, prefix (arity 1), or infix (arity 2).
+% It represents the valid positions where it may appear next to its arguments.
+%
+% The operator precedence determines which should be evaluated first when there's no
+% parenthesis.
+% For example, "2+3*4" is read as "2+(3*4)" because '*' has lower precedence than '+'.
+%
+% An operator associativity may be left, right, or none. It is used to disambiguate
+% how to combine operators with same precedence, whether they must be parsed
+% left-to-right or right-to-left.
+% An operator with no associativity can't be combined with other operators with the
+% same precedence.
+%
+% Infix examples:
+% - left associativity: "2-3-4" is read as "(2-3)-4" (result: -5) and not as
+%   "2-(3-4)" (result: 3)
+% - right associativity: "2^3^4" is read as "2(3^4)" (result: 2^81) and not as
+%   "(2^3)^4" (result: 8^4)
+% - no associativity: "2<3" is an expression that results in a boolean, but
+%   "2<3<4" has no obvious meaning, since it would compare a boolean with an integer.
+%
+% | Position | Associativity | Type |
+% |----------|---------------|------|
+% |    infix |          left |  yfx |
+% |    infix |         right |  xfy |
+% |    infix |          none |  xfx |
+%
+% Prefix operators are less common, and suffix operators even less. They can also
+% have different associativity, representing whether they can be combined.
+% For example, unary minus is (right) associative and "- - X" is read as "-(-(X))".
+%
+% | Position | Associativity | Type |
+% |----------|---------------|------|
+% |   prefix |         right |   fy |
+% |   prefix |          none |   fx |
+% |   suffix |          left |   yf |
+% |   suffix |          none |   xf |
+
+op(4, xfx, <).
+op(4, xfx, =).
+op(4, xfx, =<).
+op(4, xfx, >).
+op(4, xfx, >=).
+op(4, xfx, \=).
+op(4, xfx, \==).
+op(4, xfx, is).
+op(3, yfx, +).
+op(3, yfx, -).
+op(2, yfx, *).
+op(2, yfx, /).
+op(2, yfx, mod).
+op(1, xfy, ^).
+op(1, fy, +).
+op(1, fy, -).
+
+parse_atomic_term(Term) --> parse_struct(Term).
+parse_atomic_term(Term) --> parse_atom(Term).
+parse_atomic_term(Term) --> parse_var(Term).
+parse_atomic_term(Term) --> parse_int(Term).
+parse_atomic_term(Term) --> parse_list(Term).
+
+parse_expr(Term) -->
+  parse_expr(4, Term).
+
+parse_expr(0, Term) -->
+  "(",
+  ws,
+  parse_expr(Term),
+  ws,
+  ")".
+parse_expr(0, Term) -->
+  parse_atomic_term(Term).
+parse_expr(Prec, Term) -->
+  /* fy: prefix operator with left associativity */
+  parse_atom(atom(Op)),
+  not_followed_by_open_paren,
+  { op(Prec, fy, Op) },
+  parse_expr(Prec, Arg),
+  { =(Term, struct(Op, [Arg])) }.
+parse_expr(Prec, Term) -->
+  /* fx: prefix operator without associativity */
+  parse_atom(atom(Op)),
+  not_followed_by_open_paren,
+  { op(Prec, fy, Op) },
+  { is(Prec1, -(Prec, 1)) },
+  parse_expr(Prec1, Arg),
+  { =(Term, struct(Op, [Arg])) }.
+parse_expr(Prec, Term) -->
+  /* fallthrough: parse expression with lower precedence. */
+  { is(Prec1, -(Prec, 1)) },
+  parse_expr(Prec1, Term).
+
+not_followed_by_open_paren -->
+  peek(Char),
+  { \==(Char, '(') }.
+not_followed_by_open_paren -->
+  at_end_of_stream.
+
+peek(Char, [Char|L], [Char|L]).
+
+at_end_of_stream([], []).
+
+:- put_predicate(indicator(parse_term, 3), [
+     dcg(struct(parse_term, [var('Term')]), [struct(parse_expr, [var('Term')])])
+   ]).
+
+test_parse_expr(+ 2, - 1, +2, -1, + +2, - -1, + -1, (1), -(+1)).

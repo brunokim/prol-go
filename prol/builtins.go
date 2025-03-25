@@ -175,6 +175,7 @@ func printBuiltin(s Solver, goal Struct) ([]Struct, bool) {
 var builtins = []Builtin{
 	Builtin{Indicator{"=", 2}, unifyBuiltin},
 	Builtin{Indicator{"neq", 2}, notEqualsBuiltin},
+	Builtin{Indicator{"\\==", 2}, notEqualsBuiltin},
 	Builtin{Indicator{"atom", 1}, atomBuiltin},
 	Builtin{Indicator{"int", 1}, intBuiltin},
 	Builtin{Indicator{"var", 1}, varBuiltin},
