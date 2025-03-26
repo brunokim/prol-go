@@ -2,6 +2,7 @@ package prol
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 )
 
@@ -133,8 +134,32 @@ func putPredicateBuiltin(s Solver, goal Struct) ([]Struct, bool, error) {
 		if err != nil {
 			return isError(fmt.Errorf("put_predicate/2: rule #%d: %w", i+1, err))
 		}
+		/*
+		   if ind == (Indicator{"directive", 0}) {
+		       clause := varToRef(rules[i], map[Var]*Ref{}).(Clause)
+		       fmt.Println("Run", clause)
+		       return hasContinuation(clause.Body())
+		   }
+		*/
 	}
 	return isSuccess(s.PutPredicate(ind, rules))
+}
+
+func assertzBuiltin(s Solver, goal Struct) ([]Struct, bool, error) {
+	arg1 := Deref(goal.Args[0])
+	rule, err := CompileRule(arg1)
+	if err != nil {
+		return isError(fmt.Errorf("assertz/1: %w", err))
+	}
+	log.Println("asserting\n", rule)
+	if rule.Indicator() == (Indicator{"directive", 0}) {
+		// Execute directive immediately.
+		// TODO: consider other rule types.
+		clause := varToRef(rule, map[Var]*Ref{}).(Clause)
+		return hasContinuation(clause.Body())
+	}
+	s.Assert(rule)
+	return isSuccess(true)
 }
 
 func printBuiltin(s Solver, goal Struct) ([]Struct, bool, error) {
@@ -165,6 +190,7 @@ var builtins = []Builtin{
 	Builtin{Indicator{"atom_length", 2}, atomLengthBuiltin},
 	Builtin{Indicator{"get_predicate", 2}, getPredicateBuiltin},
 	Builtin{Indicator{"put_predicate", 2}, putPredicateBuiltin},
+	Builtin{Indicator{"assertz", 1}, assertzBuiltin},
 	Builtin{Indicator{"print", 1}, printBuiltin},
 	Builtin{Indicator{"is", 2}, isBuiltin},
 }

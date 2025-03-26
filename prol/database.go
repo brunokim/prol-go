@@ -118,6 +118,7 @@ func (db *Database) Interpret(text string, opts ...any) error {
 type Solver interface {
 	GetPredicate(ind Indicator) []Rule
 	PutPredicate(ind Indicator, rules []Rule) bool
+	Assert(rule Rule)
 	Unify(t1, t2 Term) bool
 	Unwind() func() bool
 }
@@ -173,6 +174,10 @@ func (s *solver) PutPredicate(ind Indicator, rules []Rule) bool {
 	}
 	s.db.index0[ind] = rules
 	return true
+}
+
+func (s *solver) Assert(rule Rule) {
+	s.db.Assert(rule)
 }
 
 func (s *solver) dfs(goals []Struct) bool {
