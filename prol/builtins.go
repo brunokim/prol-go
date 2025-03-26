@@ -109,24 +109,6 @@ func atomLengthBuiltin(s Solver, goal Struct) ([]Struct, bool) {
 	return nil, s.Unify(length, goal.Args[1])
 }
 
-func assertzBuiltin(s Solver, goal Struct) ([]Struct, bool) {
-	arg1 := Deref(goal.Args[0])
-	rule, err := CompileRule(arg1)
-	if err != nil {
-		log.Printf("assertz/1: %v", err)
-		return nil, false
-	}
-	log.Println("asserting\n", rule)
-	if rule.Indicator() == (Indicator{"directive", 0}) {
-		// Execute directive immediately.
-		// TODO: consider other rule types.
-		clause := varToRef(rule, map[Var]*Ref{}).(Clause)
-		return clause.Body(), true
-	}
-	s.Assert(rule)
-	return nil, true
-}
-
 func getPredicateBuiltin(s Solver, goal Struct) ([]Struct, bool) {
 	arg1 := Deref(goal.Args[0])
 	ind, err := CompileIndicator(arg1)
@@ -193,7 +175,6 @@ var builtins = []Builtin{
 	Builtin{Indicator{"int_to_chars", 2}, intToCharsBuiltin},
 	Builtin{Indicator{"chars_to_int", 2}, charsToIntBuiltin},
 	Builtin{Indicator{"atom_length", 2}, atomLengthBuiltin},
-	Builtin{Indicator{"assertz", 1}, assertzBuiltin},
 	Builtin{Indicator{"get_predicate", 2}, getPredicateBuiltin},
 	Builtin{Indicator{"put_predicate", 2}, putPredicateBuiltin},
 	Builtin{Indicator{"print", 1}, printBuiltin},

@@ -92,7 +92,7 @@ func TestSolve(t *testing.T) {
 				{"List": s(".", ref("H"), s(".", ref("H"), s(".", a("a"), ref("T"))))},
 			},
 		},
-		{
+		/*{
 			"Dynamic asserts",
 			clause(s("query"),
 				s("assertz", s("clause", s("struct", a("bit"), fromList(s("int", int_(0)))), a("[]"))),
@@ -103,7 +103,7 @@ func TestSolve(t *testing.T) {
 				{"X": int_(0)},
 				{"X": int_(1)},
 			},
-		},
+		},*/
 		{
 			"Clause reflection",
 			clause(s("query"),
