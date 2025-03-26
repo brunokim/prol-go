@@ -154,26 +154,51 @@ func (c Builtin) Unify(s Solver, goal Struct) ([]Struct, bool, error) {
 
 // --- String ---
 
+func goalString(goal Struct, isDCG bool) string {
+	// Atom.
+	if len(goal.Args) == 0 {
+		return goal.Name.String()
+	}
+	// DCG list.
+	if isDCG && goal.Indicator() == (Indicator{".", 2}) {
+		terms, tail := ToList(goal)
+		if tail == Nil {
+			return listToString(terms, tail)
+		}
+	}
+	// DCG embedded.
+	if isDCG && goal.Name == "{}" {
+		goals := make([]string, len(goal.Args))
+		for i, goal := range goal.Args {
+			goals[i] = goalString(goal.(Struct) /*isDCG*/, false)
+		}
+		return fmt.Sprintf("{ %s }", strings.Join(goals, ",\n    "))
+	}
+	return structToString(goal)
+}
+
 func (c Clause) String() string {
+	head := goalString(c.Head() /*isDCG*/, false)
 	if len(c) == 1 {
-		return fmt.Sprintf("%s.", c.Head())
+		return fmt.Sprintf("%s.", head)
 	}
 	body := make([]string, len(c)-1)
 	for i, goal := range c.Body() {
-		body[i] = goal.String()
+		body[i] = goalString(goal /*isDCG*/, false)
 	}
-	return fmt.Sprintf("%s :-\n  %s.", c.Head(), strings.Join(body, ",\n  "))
+	return fmt.Sprintf("%s :-\n  %s.", head, strings.Join(body, ",\n  "))
 }
 
 func (c DCG) String() string {
+	head := goalString(c[0] /*isDCG*/, true)
 	if len(c) == 1 {
-		return fmt.Sprintf("%v --> [].", c[0])
+		return fmt.Sprintf("%s --> [].", head)
 	}
 	body := make([]string, len(c)-1)
 	for i, s := range c[1:] {
-		body[i] = s.String()
+		body[i] = goalString(s /*isDCG*/, true)
 	}
-	return fmt.Sprintf("%v -->\n  %s.", c[0], strings.Join(body, ",\n  "))
+	return fmt.Sprintf("%s -->\n  %s.", head, strings.Join(body, ",\n  "))
 }
 
 func (c Builtin) String() string {

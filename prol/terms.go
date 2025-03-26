@@ -245,6 +245,10 @@ func (t Struct) String() string {
 	if len(terms) > 0 {
 		return listToString(terms, tail)
 	}
+	return structToString(t)
+}
+
+func structToString(t Struct) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "%v(", t.Name)
 	commaSeparated(&b, t.Args)
