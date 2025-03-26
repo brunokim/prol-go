@@ -21,7 +21,7 @@ func TestBootstrapParsesItself(t *testing.T) {
 	}
 	query := clause(s("query"),
 		s("atom_chars", a(bootstrap), v("_Chars")),
-		s("database", v("Rules"), v("_Chars"), v("_Rest0")),
+		s("parse_database", v("Rules"), v("_Chars"), v("_Rest0")),
 		s("ws", v("_Rest0"), v("Rest")),
 	)
 	solution, err := db.FirstSolution(query, "max_depth", len(bootstrap)*10)

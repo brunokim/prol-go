@@ -172,6 +172,15 @@ func printBuiltin(s Solver, goal Struct) ([]Struct, bool) {
 	return nil, true
 }
 
+func isBuiltin(s Solver, goal Struct) ([]Struct, bool) {
+	arg2, err := Eval(goal.Args[1])
+	if err != nil {
+		log.Printf("is/2: arg #2: %v", err)
+		return nil, false
+	}
+	return nil, s.Unify(goal.Args[0], arg2)
+}
+
 var builtins = []Builtin{
 	Builtin{Indicator{"=", 2}, unifyBuiltin},
 	Builtin{Indicator{"neq", 2}, notEqualsBuiltin},
@@ -188,4 +197,5 @@ var builtins = []Builtin{
 	Builtin{Indicator{"get_predicate", 2}, getPredicateBuiltin},
 	Builtin{Indicator{"put_predicate", 2}, putPredicateBuiltin},
 	Builtin{Indicator{"print", 1}, printBuiltin},
+	Builtin{Indicator{"is", 2}, isBuiltin},
 }
