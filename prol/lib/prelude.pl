@@ -289,7 +289,7 @@ parse_atom(Atom) -->
 
 test_parse_symbol(=, ==, =<, >=, ++, **, -*/*-).
 
-% Prolog allows for dynamic and user-defined operators. 
+% Prolog allows for dynamic and user-defined operators.
 % They must be registered as a fact op/3 like op(600, xfy, +), where the args mean
 % - the operator precedence.
 % - the operator position and associativity type
@@ -401,4 +401,7 @@ at_end_of_stream([], []).
      dcg(struct(parse_term, [var('Term')]), [struct(parse_expr, [var('Term')])])
    ]).
 
-test_parse_expr(1, a, X, f(g, h), [c, d], + 2, - 1, +2, -1, + +2, - -1, + -1, (1), -(+1)).
+test_parse_expr(1, a, X, f(g, h), [c, d]).
+test_parse_expr((1), ( 1 ), f((g))).
+test_parse_expr(+ 2, - 1, +2, -1).
+test_parse_expr(- -1, + -1, + +2).

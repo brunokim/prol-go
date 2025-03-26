@@ -99,7 +99,7 @@ func (db *Database) Interpret(text string, opts ...any) error {
 		}
 		chars = solution[rest]
 	}
-	fmt.Println("--- finished asserts ---")
+	log.Println("--- finished asserts ---")
 	solution, err := db.FirstSolution(Clause{
 		Struct{"query", nil},
 		Struct{"ws", []Term{chars, rest}}}, opts...)
