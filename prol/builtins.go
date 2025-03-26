@@ -19,6 +19,46 @@ func notEqualsBuiltin(s Solver, goal Struct) ([]Struct, bool, error) {
 	return isSuccess(!ok && !didBind)
 }
 
+func gtBuiltin(s Solver, goal Struct) ([]Struct, bool, error) {
+	arg1, arg2 := Deref(goal.Args[0]), Deref(goal.Args[1])
+	i1, ok1 := arg1.(Int)
+	i2, ok2 := arg2.(Int)
+	if !ok1 || !ok2 {
+		return isError(fmt.Errorf(">/2: want Int < Int, got %T < %T", arg1, arg2))
+	}
+	return isSuccess(int(i1) > int(i2))
+}
+
+func gteBuiltin(s Solver, goal Struct) ([]Struct, bool, error) {
+	arg1, arg2 := Deref(goal.Args[0]), Deref(goal.Args[1])
+	i1, ok1 := arg1.(Int)
+	i2, ok2 := arg2.(Int)
+	if !ok1 || !ok2 {
+		return isError(fmt.Errorf(">=/2: want Int >= Int, got %T >= %T", arg1, arg2))
+	}
+	return isSuccess(int(i1) >= int(i2))
+}
+
+func ltBuiltin(s Solver, goal Struct) ([]Struct, bool, error) {
+	arg1, arg2 := Deref(goal.Args[0]), Deref(goal.Args[1])
+	i1, ok1 := arg1.(Int)
+	i2, ok2 := arg2.(Int)
+	if !ok1 || !ok2 {
+		return isError(fmt.Errorf("</2: want Int < Int, got %T < %T", arg1, arg2))
+	}
+	return isSuccess(int(i1) < int(i2))
+}
+
+func lteBuiltin(s Solver, goal Struct) ([]Struct, bool, error) {
+	arg1, arg2 := Deref(goal.Args[0]), Deref(goal.Args[1])
+	i1, ok1 := arg1.(Int)
+	i2, ok2 := arg2.(Int)
+	if !ok1 || !ok2 {
+		return isError(fmt.Errorf("=</2: want Int =< Int, got %T =< %T", arg1, arg2))
+	}
+	return isSuccess(int(i1) <= int(i2))
+}
+
 func atomBuiltin(s Solver, goal Struct) ([]Struct, bool, error) {
 	term := Deref(goal.Args[0])
 	_, ok := term.(Atom)
@@ -180,6 +220,10 @@ var builtins = []Builtin{
 	Builtin{Indicator{"=", 2}, unifyBuiltin},
 	Builtin{Indicator{"neq", 2}, notEqualsBuiltin},
 	Builtin{Indicator{"\\==", 2}, notEqualsBuiltin},
+	Builtin{Indicator{">", 2}, gtBuiltin},
+	Builtin{Indicator{">=", 2}, gteBuiltin},
+	Builtin{Indicator{"<", 2}, ltBuiltin},
+	Builtin{Indicator{"=<", 2}, lteBuiltin},
 	Builtin{Indicator{"atom", 1}, atomBuiltin},
 	Builtin{Indicator{"int", 1}, intBuiltin},
 	Builtin{Indicator{"var", 1}, varBuiltin},
