@@ -53,21 +53,29 @@ func (db *Database) Matching(goal Struct) iter.Seq[Rule] {
 	}
 }
 
-func (db *Database) Solve(query Clause, opts ...any) iter.Seq[Solution] {
+func (db *Database) Solve(query Clause, opts ...any) (iter.Seq[Solution], func() error) {
 	env := make(map[Var]*Ref)
 	query = varToRef(query, env).(Clause)
 	s := &solver{db: db, env: env}
 	s.readOpts(opts)
-	return func(yield func(Solution) bool) {
+	seq := func(yield func(Solution) bool) {
 		s.yield = yield
 		s.dfs(query)
 	}
+	ferr := func() error {
+		return s.err
+	}
+	return seq, ferr
 }
 
 func (db *Database) FirstSolution(query Clause, opts ...any) (Solution, error) {
-	next, stop := iter.Pull(db.Solve(query, opts...))
+	seq, ferr := db.Solve(query, opts...)
+	next, stop := iter.Pull(seq)
 	defer stop()
 	solution, ok := next()
+	if err := ferr(); err != nil {
+		return nil, err
+	}
 	if !ok {
 		return nil, fmt.Errorf("expecting at least one solution: %v", query)
 	}
@@ -119,6 +127,7 @@ type Solution map[Var]Term
 type solver struct {
 	db    *Database
 	env   map[Var]*Ref
+	err   error
 	trail []*Ref
 	yield func(Solution) bool
 	// Opts
@@ -167,6 +176,9 @@ func (s *solver) PutPredicate(ind Indicator, rules []Rule) bool {
 }
 
 func (s *solver) dfs(goals []Struct) bool {
+	if s.err != nil {
+		return false
+	}
 	if s.limit > 0 && s.numSolutions >= s.limit {
 		return false
 	}
@@ -196,11 +208,15 @@ func (s *solver) dfs(goals []Struct) bool {
 		return false
 	}
 	unwind := s.Unwind()
+	defer unwind()
 	for rule := range s.db.Matching(goal) {
-		body, ok := rule.Unify(s, goal)
+		body, ok, err := rule.Unify(s, goal)
+		if err != nil {
+			s.err = err
+			return false
+		}
 		if ok {
 			if !s.dfs(slices.Concat(body, rest)) {
-				unwind()
 				return false
 			}
 		}

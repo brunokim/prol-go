@@ -192,12 +192,16 @@ func runQuery(title string, query []prol.Struct, opts ...any) {
 	cnt := 1
 	q := prol.Clause(append([]prol.Struct{st("query")}, query...))
 	fmt.Println(q)
-	for solution := range db.Solve(q, solveOpts...) {
+	seq, ferr := db.Solve(q, solveOpts...)
+	for solution := range seq {
 		fmt.Println(solution)
 		if cnt >= limit && limit >= 0 {
 			break
 		}
 		cnt++
+	}
+	if err := ferr(); err != nil {
+		fmt.Println(err)
 	}
 	fmt.Println()
 }

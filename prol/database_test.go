@@ -164,7 +164,12 @@ func TestSolve(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Log(test.query)
 			db := prol.NewDatabase(rules...)
-			got := slices.Collect(db.Solve(test.query, test.opts...))
+			seq, ferr := db.Solve(test.query, test.opts...)
+			got := slices.Collect(seq)
+			if err := ferr(); err != nil {
+				t.Errorf("got err: %v", err)
+				return
+			}
 			if diff := cmp.Diff(test.want, got, opts...); diff != "" {
 				t.Errorf("(-want, +got): %s", diff)
 			}

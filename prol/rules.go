@@ -10,8 +10,15 @@ type Rule interface {
 	isRule()
 	Indicator() Indicator
 	ToAST() Term
-	Unify(s Solver, goal Struct) (body []Struct, ok bool)
+	Unify(s Solver, goal Struct) (body []Struct, ok bool, err error)
 }
+
+//   cont  | success |  error  |       description        |
+// --------|---------|---------|--------------------------|
+//     nil |   false | non-nil |          error condition |
+//     nil |   false |     nil |         failure to unify |
+//     nil |    true |     nil |   successful termination |
+// non-nil |    true |     nil |  successful continuation |
 
 // --- Clause ---
 
@@ -74,7 +81,7 @@ func (c DCG) toClause() Clause {
 
 type Builtin struct {
 	indicator Indicator
-	unify     func(Solver, Struct) ([]Struct, bool)
+	unify     func(Solver, Struct) ([]Struct, bool, error)
 }
 
 func (Builtin) isRule() {}
@@ -117,19 +124,31 @@ func (c Builtin) ToAST() Term {
 
 // --- Unify ---
 
-func (c Clause) Unify(s Solver, goal Struct) ([]Struct, bool) {
-	c = varToRef(c, map[Var]*Ref{}).(Clause)
-	if !s.Unify(c.Head(), goal) {
-		return nil, false
-	}
-	return c.Body(), true
+func hasContinuation(cont []Struct) ([]Struct, bool, error) {
+	return cont, true, nil
 }
 
-func (c DCG) Unify(s Solver, goal Struct) ([]Struct, bool) {
+func isSuccess(ok bool) ([]Struct, bool, error) {
+	return nil, ok, nil
+}
+
+func isError(err error) ([]Struct, bool, error) {
+	return nil, false, err
+}
+
+func (c Clause) Unify(s Solver, goal Struct) ([]Struct, bool, error) {
+	c = varToRef(c, map[Var]*Ref{}).(Clause)
+	if ok := s.Unify(c.Head(), goal); !ok {
+		return isSuccess(false)
+	}
+	return hasContinuation(c.Body())
+}
+
+func (c DCG) Unify(s Solver, goal Struct) ([]Struct, bool, error) {
 	return c.toClause().Unify(s, goal)
 }
 
-func (c Builtin) Unify(s Solver, goal Struct) ([]Struct, bool) {
+func (c Builtin) Unify(s Solver, goal Struct) ([]Struct, bool, error) {
 	return c.unify(s, goal)
 }
 
