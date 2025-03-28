@@ -168,7 +168,7 @@ func TestSolve(t *testing.T) {
 			seq, ferr := db.Solve(test.query, test.opts...)
 			got := slices.Collect(seq)
 			if err := ferr(); err != nil {
-				if !errors.Is(err, (prol.MaxSolutionsError{})) && !errors.Is(err, (prol.MaxDepthError{})) {
+				if !errors.Is(err, (prol.MaxSolutionsError{})) && !errors.Is(err, (prol.StopIterationError{})) {
 					t.Errorf("got err: %v", err)
 				}
 			}

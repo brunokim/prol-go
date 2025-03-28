@@ -70,17 +70,14 @@ func (db *Database) Solve(query Clause, opts ...any) (iter.Seq[Solution], func()
 }
 
 func (db *Database) FirstSolution(query Clause, opts ...any) (Solution, error) {
-	seq, ferr := db.Solve(query, opts...)
+	seq, errFn := db.Solve(query, opts...)
 	next, stop := iter.Pull(seq)
 	defer stop()
 	solution, ok := next()
-	if err := ferr(); err != nil {
-		return nil, err
-	}
 	if !ok {
 		return nil, fmt.Errorf("expecting at least one solution: %v", query)
 	}
-	return solution, nil
+	return solution, errFn()
 }
 
 func (db *Database) Interpret(text string, opts ...any) error {
@@ -128,9 +125,11 @@ type Solution map[Var]Term
 
 type MaxSolutionsError struct{}
 type MaxDepthError struct{}
+type StopIterationError struct{}
 
-func (MaxSolutionsError) Error() string { return "max solutions reached" }
-func (MaxDepthError) Error() string     { return "max depth reached" }
+func (MaxSolutionsError) Error() string  { return "max solutions reached" }
+func (MaxDepthError) Error() string      { return "max depth reached" }
+func (StopIterationError) Error() string { return "stop iteration" }
 
 type solver struct {
 	db    *Database
@@ -210,7 +209,9 @@ func (s *solver) log(args ...any) {
 func (s *solver) dfs(goals []Struct) error {
 	if len(goals) == 0 {
 		// Found a solution
-		s.yield(s.solution())
+		if !s.yield(s.solution()) {
+			return StopIterationError{}
+		}
 		s.numSolutions++
 		if s.limit > 0 && s.numSolutions >= s.limit {
 			return MaxSolutionsError{}
