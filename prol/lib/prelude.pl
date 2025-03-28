@@ -1,16 +1,6 @@
 doc(prelude, extends_the_language_syntax_further, using_only_itself).
 
 
-doc(at_end_of_phrase, dcg_succeeds_if_we_are_at_the_last_position).
-
-at_end_of_phrase([], []).
-
-
-doc(peek, dcg_extracts_next_char_without_advancing_tokens).
-
-peek(Char, \.(Char, L), \.(Char, L)).
-
-
 doc(line_comment, parses_a_line_comment).
 
 line_comment(L0, L) :-
@@ -25,8 +15,6 @@ line_comment_chars(L0, L) :-
 line_comment_chars(L0, L) :-
   \=(L0, \.(\
 , L)).
-line_comment_chars(L0, L) :-
-  at_end_of_phrase(L0, L).
 
 
 doc(registers_line_comment_as_whitespace).
@@ -380,19 +368,17 @@ parse_expr(0, Term) -->
 parse_expr(0, Term) -->
   parse_atomic_term(Term).
 parse_expr(Prec, Term) -->
-  % fy: prefix operator with left associativity
+  /* fy: prefix operator with left associativity */
   { >(Prec, 0) },
   parse_atom(atom(Op)),
-  not_followed_by_open_paren,
   { op(Prec, fy, Op) },
   ws,
   parse_expr(Prec, Arg),
   { =(Term, struct(Op, [Arg])) }.
 parse_expr(Prec, Term) -->
-  % fx: prefix operator without associativity
+  /* fx: prefix operator without associativity */
   { >(Prec, 0) },
   parse_atom(atom(Op)),
-  not_followed_by_open_paren,
   { op(Prec, fx, Op),
     is(Prec1, -(Prec, 1)) },
   ws,
@@ -404,17 +390,11 @@ parse_expr(Prec, Term) -->
     is(Prec1, -(Prec, 1)) },
   parse_expr(Prec1, Term).
 
-not_followed_by_open_paren -->
-  peek(Char),
-  { \==(Char, '(') }.
-not_followed_by_open_paren -->
-  at_end_of_phrase.
-
 :- put_predicate(indicator(parse_term, 3), [
      dcg(struct(parse_term, [var('Term')]), [struct(parse_expr, [var('Term')])])
    ]).
 
 test_parse_expr(1, a, X, f(g, h), [c, d]).
-test_parse_expr((1), ( 1 ), f((g))).
+test_parse_expr((1), ( 1 ), f((g)), +(1,2)).
 test_parse_expr(+ 2, - 1, +2, -1).
 test_parse_expr(- -1, + -1, + +2).
