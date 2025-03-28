@@ -1,6 +1,7 @@
 package prol_test
 
 import (
+	"errors"
 	"slices"
 	"testing"
 
@@ -167,8 +168,9 @@ func TestSolve(t *testing.T) {
 			seq, ferr := db.Solve(test.query, test.opts...)
 			got := slices.Collect(seq)
 			if err := ferr(); err != nil {
-				t.Errorf("got err: %v", err)
-				return
+				if !errors.Is(err, (prol.MaxSolutionsError{})) && !errors.Is(err, (prol.MaxDepthError{})) {
+					t.Errorf("got err: %v", err)
+				}
 			}
 			if diff := cmp.Diff(test.want, got, opts...); diff != "" {
 				t.Errorf("(-want, +got): %s", diff)

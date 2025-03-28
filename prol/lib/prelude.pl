@@ -381,6 +381,7 @@ parse_expr(0, Term) -->
   parse_atomic_term(Term).
 parse_expr(Prec, Term) -->
   % fy: prefix operator with left associativity
+  { >(Prec, 0) },
   parse_atom(atom(Op)),
   not_followed_by_open_paren,
   { op(Prec, fy, Op) },
@@ -389,9 +390,10 @@ parse_expr(Prec, Term) -->
   { =(Term, struct(Op, [Arg])) }.
 parse_expr(Prec, Term) -->
   % fx: prefix operator without associativity
+  { >(Prec, 0) },
   parse_atom(atom(Op)),
   not_followed_by_open_paren,
-  { op(Prec, fy, Op),
+  { op(Prec, fx, Op),
     is(Prec1, -(Prec, 1)) },
   ws,
   parse_expr(Prec1, Arg),

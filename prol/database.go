@@ -58,14 +58,15 @@ func (db *Database) Solve(query Clause, opts ...any) (iter.Seq[Solution], func()
 	query = varToRef(query, env).(Clause)
 	s := &solver{db: db, env: env}
 	s.readOpts(opts)
+	var err error
 	seq := func(yield func(Solution) bool) {
 		s.yield = yield
-		s.dfs(query)
+		err = s.dfs(query)
 	}
-	ferr := func() error {
-		return s.err
+	errFn := func() error {
+		return err
 	}
-	return seq, ferr
+	return seq, errFn
 }
 
 func (db *Database) FirstSolution(query Clause, opts ...any) (Solution, error) {
@@ -125,10 +126,15 @@ type Solver interface {
 
 type Solution map[Var]Term
 
+type MaxSolutionsError struct{}
+type MaxDepthError struct{}
+
+func (MaxSolutionsError) Error() string { return "max solutions reached" }
+func (MaxDepthError) Error() string     { return "max depth reached" }
+
 type solver struct {
 	db    *Database
 	env   map[Var]*Ref
-	err   error
 	trail []*Ref
 	yield func(Solution) bool
 	// Opts
@@ -180,57 +186,66 @@ func (s *solver) Assert(rule Rule) {
 	s.db.Assert(rule)
 }
 
-func (s *solver) dfs(goals []Struct) bool {
-	if s.err != nil {
-		return false
-	}
-	if s.limit > 0 && s.numSolutions >= s.limit {
-		return false
-	}
-	if len(goals) == 0 {
-		m := make(Solution)
-		for x, ref := range s.env {
-			if x[0] == '_' {
-				continue
-			}
-			m[x] = RefToTerm(ref)
+// --- Search ---
+
+func (s *solver) solution() Solution {
+	m := make(Solution)
+	for x, ref := range s.env {
+		if x[0] == '_' {
+			continue
 		}
+		m[x] = RefToTerm(ref)
+	}
+	return m
+}
+
+func (s *solver) log(args ...any) {
+	if s.trace {
+		indent := strings.Repeat("  ", s.depth)
+		args = append([]any{indent}, args...)
+		log.Println(args...)
+	}
+}
+
+func (s *solver) dfs(goals []Struct) error {
+	if len(goals) == 0 {
+		// Found a solution
+		s.yield(s.solution())
 		s.numSolutions++
-		return s.yield(m)
+		if s.limit > 0 && s.numSolutions >= s.limit {
+			return MaxSolutionsError{}
+		}
+		return nil
 	}
 	goal, rest := goals[0], goals[1:]
-	if s.trace {
-		log.Println(">>> goal:", goal.Indicator())
-	}
+	s.log(">>> goal:", goal.Indicator())
+	// Check call depth.
 	s.depth++
 	defer func() { s.depth-- }()
 	if s.maxDepth > 0 && s.depth > s.maxDepth {
-		log.Println("max depth reached")
-		return false
+		return MaxDepthError{}
 	}
+	// Check if predicate exists.
 	if !s.db.PredicateExists(goal) {
-		log.Printf("predicate does not exist for goal: %v", goal.Indicator())
-		return false
+		return fmt.Errorf("predicate does not exist for goal: %v", goal.Indicator())
 	}
 	unwind := s.Unwind()
 	defer unwind()
 	for rule := range s.db.Matching(goal) {
+		unwind()
 		body, ok, err := rule.Unify(s, goal)
 		if err != nil {
-			s.err = err
-			return false
+			return err
 		}
-		if ok {
-			if !s.dfs(slices.Concat(body, rest)) {
-				return false
-			}
+		if !ok {
+			continue
 		}
-		unwind()
+		if err := s.dfs(slices.Concat(body, rest)); err != nil {
+			return err
+		}
 	}
-	if s.trace {
-		log.Println("<<< backtrack")
-	}
-	return true
+	s.log("<<< backtrack")
+	return nil
 }
 
 func (s *solver) Unwind() func() bool {
