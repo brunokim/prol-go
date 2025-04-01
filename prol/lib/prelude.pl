@@ -333,67 +333,141 @@ test_parse_symbol(=, ==, =<, >=, ++, **, -*/*-).
 % |   suffix |          left |   yf |
 % |   suffix |          none |   xf |
 
-op(4, xfx, <).
-op(4, xfx, =).
-op(4, xfx, =<).
-op(4, xfx, >).
-op(4, xfx, >=).
-op(4, xfx, \=).
-op(4, xfx, \==).
-op(4, xfx, is).
-op(3, yfx, +).
-op(3, yfx, -).
-op(2, yfx, *).
-op(2, yfx, /).
-op(2, yfx, mod).
-op(1, xfy, ^).
-op(1, fy, +).
-op(1, fy, -).
+
+op(700, xfx, <).
+op(700, xfx, =).
+op(700, xfx, =<).
+op(700, xfx, >).
+op(700, xfx, >=).
+op(700, xfx, \=).
+op(700, xfx, \==).
+op(700, xfx, is).
+op(500, yfx, +).
+op(500, yfx, -).
+op(400, yfx, *).
+op(400, yfx, /).
+op(400, yfx, mod).
+op(200, xfy, ^).
+op(200, fy, +).
+op(200, fy, -).
 
 parse_atomic_term(Term) --> parse_struct(Term).
 parse_atomic_term(Term) --> parse_atom(Term).
 parse_atomic_term(Term) --> parse_var(Term).
 parse_atomic_term(Term) --> parse_int(Term).
 parse_atomic_term(Term) --> parse_list(Term).
-
-parse_expr(Term) -->
-  parse_expr(4, Term).
-
-parse_expr(0, Term) -->
+parse_atomic_term(Term) -->
   "(",
   ws,
   parse_expr(Term),
   ws,
   ")".
-parse_expr(0, Term) -->
+
+op_type_position(fx, prefix).
+op_type_position(fy, prefix).
+op_type_position(xf, suffix).
+op_type_position(yf, suffix).
+op_type_position(yfx, infix).
+op_type_position(xfy, infix).
+op_type_position(xfx, infix).
+
+op_type_associativity(fx, none).
+op_type_associativity(fy, right).
+op_type_associativity(xf, none).
+op_type_associativity(yf, left).
+op_type_associativity(yfx, left).
+op_type_associativity(xfy, right).
+op_type_associativity(xfx, none).
+
+left_precedence(Prec, yf, Prec).
+left_precedence(Prec, yfx, Prec).
+left_precedence(Prec0, xf, Prec) :-
+  is(Prec, -(Prec0, 1)).
+left_precedence(Prec0, xfy, Prec) :-
+  is(Prec, -(Prec0, 1)).
+left_precedence(Prec0, xfx, Prec) :-
+  is(Prec, -(Prec0, 1)).
+
+right_precedence(Prec, fy, Prec).
+right_precedence(Prec, xfy, Prec).
+right_precedence(Prec0, fx, Prec) :-
+  is(Prec, -(Prec0, 1)).
+right_precedence(Prec0, yfx, Prec) :-
+  is(Prec, -(Prec0, 1)).
+right_precedence(Prec0, xfx, Prec) :-
+  is(Prec, -(Prec0, 1)).
+
+parse_expr(Term) -->
+  parse_leaf(Leaf),
+  ws,
+  parse_infix(Leaf, Term).
+parse_expr(Term) -->
+  parse_leaf(Term).
+
+parse_infix(Left, Term) -->
+  parse_atom(atom(Op)),
+  { op(Prec, Type, Op),
+    op_type_position(Type, infix) },
+  ws,
+  parse_leaf(Right),
+  { insert_right(Left, op(Prec, Type, Op), Right, Term0) },
+  parse_infix(Term0, Term).
+parse_infix(Term, Term).
+
+parse_leaf(Term) -->
+  parse_prefix(1200, Term0),
+  parse_suffix(Term0, Term).
+
+parse_prefix(Prec0, Term) -->
+  parse_atom(atom(Token)),
+  { op(Prec1, Type, Token),
+    >=(Prec0, Prec1),
+    op_type_position(Type, prefix),
+    right_precedence(Prec1, Type, Prec2) },
+  ws,
+  parse_prefix(Prec2, Term0),
+  { =(Term, expr(nil, op(Prec1, Type, Token), Term0)) }.
+parse_prefix(_, Term) -->
   parse_atomic_term(Term).
-parse_expr(Prec, Term) -->
-  /* fy: prefix operator with left associativity */
-  { >(Prec, 0) },
-  parse_atom(atom(Op)),
-  { op(Prec, fy, Op) },
+
+parse_suffix(Left, Term) -->
   ws,
-  parse_expr(Prec, Arg),
-  { =(Term, struct(Op, [Arg])) }.
-parse_expr(Prec, Term) -->
-  /* fx: prefix operator without associativity */
-  { >(Prec, 0) },
-  parse_atom(atom(Op)),
-  { op(Prec, fx, Op),
-    is(Prec1, -(Prec, 1)) },
-  ws,
-  parse_expr(Prec1, Arg),
-  { =(Term, struct(Op, [Arg])) }.
-parse_expr(Prec, Term) -->
-  /* fallthrough: parse expression with lower precedence. */
-  { >(Prec, 0),
-    is(Prec1, -(Prec, 1)) },
-  parse_expr(Prec1, Term).
+  parse_atom(atom(Token)),
+  { op(Prec, Type, Token),
+    op_type_position(Type, suffix),
+    insert_right(Left, op(Prec, Type, Token), nil, Term0) },
+  parse_suffix(Term0, Term).
+parse_suffix(Term, Term) --> [].
+
+insert_right(Expr, Op1, Arg, Term) :-
+  =(Expr, expr(Left, Op2, Right)),
+  check_precedence(Op1, Op2, left),
+  =(Term, expr(Expr, Op1, Arg)).
+insert_right(Expr, Op1, Arg, Term) :-
+  =(Expr, expr(Left, Op2, Right)),
+  =(Right, expr(_, _, _)),
+  check_precedence(Op2, Op1, left),
+  =(Term, expr(Left, Op2, expr(Right, Op1, Arg))).
+insert_right(Expr, Op1, Arg, Term) :-
+  =(Expr, expr(Left, Op2, Right)),
+  insert_right(Right, Op1, Arg, Right0),
+  =(Term, expr(Left, Op2, Right0)).
+insert_right(Expr, Op1, Arg, Term) :-
+  =(Term, expr(Expr, Op1, Arg)).
+
+check_precedence(op(Prec1, Type1, _), op(Prec2, _, _), Pos) :-
+  op_type_associativity(Type1, Pos),
+  is(Prec2_1, -(Prec2, 1)),
+  >(Prec1, Prec2_1).
+check_precedence(op(Prec1, _, _), op(Prec2, _, _), _) :-
+  >(Prec1, Prec2).
 
 :- put_predicate(indicator(parse_term, 3), [
      dcg(struct(parse_term, [var('Term')]), [struct(parse_expr, [var('Term')])])
    ]).
 
+test_parse_expr.
+test_parse_expr(1).
 test_parse_expr(1, a, X, f(g, h), [c, d]).
 test_parse_expr((1), ( 1 ), f((g)), +(1,2)).
 test_parse_expr(+ 2, - 1, +2, -1).
