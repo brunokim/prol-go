@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/brunokim/prol-go/prol"
 )
@@ -207,10 +206,7 @@ func runQuery(title string, query []prol.Struct, opts ...any) {
 }
 
 func main() {
-	prelude, err := prol.Prelude()
-	if err != nil {
-		log.Fatal(err)
-	}
+	prelude := prol.Prelude()
 	fmt.Println(prelude)
 	fmt.Println()
 	return

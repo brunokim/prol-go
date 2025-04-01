@@ -15,10 +15,7 @@ import (
 var bootstrap string
 
 func TestBootstrapParsesItself(t *testing.T) {
-	db, err := prol.Bootstrap()
-	if err != nil {
-		t.Fatal(err)
-	}
+	db := prol.Bootstrap()
 	query := clause(s("query"),
 		s("atom_chars", a(bootstrap), v("_Chars")),
 		s("parse_database", v("Rules"), v("_Chars"), v("_Rest0")),

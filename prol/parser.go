@@ -1,45 +1,57 @@
 package prol
 
 import (
-	_ "embed"
+	"embed"
 	"fmt"
+	"io/fs"
 	"regexp"
+	"slices"
 	"strconv"
+	"strings"
 )
 
-var (
-	//go:embed lib/bootstrap.pl
-	bootstrap string
+//go:embed lib
+var lib embed.FS
 
-	//go:embed lib/prelude.pl
-	prelude string
-)
-
-func Prelude(opts ...any) (*Database, error) {
-	db, err := Bootstrap()
+func readLib(name string) string {
+	bs, err := lib.ReadFile(name)
 	if err != nil {
-		// Should never happen, represents a library error.
-		return nil, fmt.Errorf("bootstrap library error: %w", err)
+		panic(err.Error())
 	}
-	if err := db.Interpret(prelude, opts...); err != nil {
-		// Should never happen, represents a library error.
-		return nil, fmt.Errorf("prelude library error: %w", err)
+	return string(bs)
+}
+
+func Prelude(opts ...any) *Database {
+	db := Bootstrap()
+	entries, err := lib.ReadDir("lib/prelude")
+	if err != nil {
+		panic(fmt.Sprintf("prelude library error! %v", err))
 	}
-	return db, nil
+	slices.SortFunc(entries, func(a, b fs.DirEntry) int {
+		return strings.Compare(a.Name(), b.Name())
+	})
+	for _, entry := range entries {
+		content := readLib("lib/prelude/" + entry.Name())
+		if err := db.Interpret(content, opts...); err != nil {
+			panic(fmt.Sprintf("prelude library error! %s: %v", entry.Name(), err))
+		}
+	}
+	return db
 }
 
 // --- Bootstrap parser ---
 
-func Bootstrap() (*Database, error) {
-	p := parser{bootstrap, 0}
+func Bootstrap() *Database {
+	p := parser{readLib("lib/bootstrap.pl"), 0}
 	rules := p.database()
 	db := NewDatabase(rules...)
 	if !p.isAtEOF() {
-		return db, fmt.Errorf(
+		msg := fmt.Sprintf(
 			"trailing characters at position %d:\n----\n%s\n----",
 			p.pos, p.text[p.pos:min(len(p.text), p.pos+50)])
+		panic(fmt.Sprintf("bootstrap library error!\n%s", msg))
 	}
-	return db, nil
+	return db
 }
 
 type parser struct {
