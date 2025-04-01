@@ -106,23 +106,65 @@ test_parse_symbol(=, ==, =<, >=, ++, **, -*/*-).
 % |   suffix |          none |   xf |
 
 
-op(700, xfx, <).
-op(700, xfx, =).
-op(700, xfx, =<).
-op(700, xfx, >).
-op(700, xfx, >=).
-op(700, xfx, \=).
-op(700, xfx, \==).
-op(700, xfx, is).
-op(500, yfx, +).
-op(500, yfx, -).
-op(400, yfx, *).
-op(400, yfx, /).
-op(400, yfx, mod).
-op(200, xfy, ^).
-op(200, fy, +).
-op(200, fy, -).
+op(700, xfx, <).   % Less than
+op(700, xfx, =<).  % Less or equal to
+op(700, xfx, >).   % Greater than
+op(700, xfx, >=).  % Greater or equal to
+op(700, xfx, =).   % Unifies
+op(700, xfx, \=).  % Does not unify
+op(700, xfx, ==).  % Equivalent to
+op(700, xfx, \==). % Not equivalent to
+op(700, xfx, is).  % Arithmetic evaluation
+op(500, yfx, +).   % Addition
+op(500, yfx, -).   % Subtraction
+op(400, yfx, *).   % Multiplication
+op(400, yfx, /).   % Division (quotient)
+op(400, yfx, mod). % Remainder of division
+op(200, xfy, ^).   % Power to
+op(200, fy, +).    % Positive (unary)
+op(200, fy, -).    % Negative (unary)
 
+% op_type_position(Type, Position) relates an operator type with its position.
+op_type_position(fx, prefix).
+op_type_position(fy, prefix).
+op_type_position(xf, suffix).
+op_type_position(yf, suffix).
+op_type_position(yfx, infix).
+op_type_position(xfy, infix).
+op_type_position(xfx, infix).
+
+% op_type_associativity(Type, Associativity) relates an operator type with its associativity.
+op_type_associativity(fx, none).
+op_type_associativity(fy, right).
+op_type_associativity(xf, none).
+op_type_associativity(yf, left).
+op_type_associativity(yfx, left).
+op_type_associativity(xfy, right).
+op_type_associativity(xfx, none).
+
+% left_precedence(OpPrecedence, Type, LeftPrecedence) provides the maximum precedence for
+% the left argument of an operator with given Type and OpPrecedence.
+left_precedence(Prec, yf, Prec).
+left_precedence(Prec, yfx, Prec).
+left_precedence(Prec0, xf, Prec) :-
+  is(Prec, -(Prec0, 1)).
+left_precedence(Prec0, xfy, Prec) :-
+  is(Prec, -(Prec0, 1)).
+left_precedence(Prec0, xfx, Prec) :-
+  is(Prec, -(Prec0, 1)).
+
+% right_precedence(OpPrecedence, Type, RightPrecedence) provides the maximum precedence for
+% the right argument of an operator with given Type and OpPrecedence.
+right_precedence(Prec, fy, Prec).
+right_precedence(Prec, xfy, Prec).
+right_precedence(Prec0, fx, Prec) :-
+  is(Prec, -(Prec0, 1)).
+right_precedence(Prec0, yfx, Prec) :-
+  is(Prec, -(Prec0, 1)).
+right_precedence(Prec0, xfx, Prec) :-
+  is(Prec, -(Prec0, 1)).
+
+% parse_atomic_term//1 parses expression literals, or a parenthesized expression.
 parse_atomic_term(Term) --> parse_struct(Term).
 parse_atomic_term(Term) --> parse_atom(Term).
 parse_atomic_term(Term) --> parse_var(Term).
@@ -135,61 +177,22 @@ parse_atomic_term(Term) -->
   ws,
   ")".
 
-op_type_position(fx, prefix).
-op_type_position(fy, prefix).
-op_type_position(xf, suffix).
-op_type_position(yf, suffix).
-op_type_position(yfx, infix).
-op_type_position(xfy, infix).
-op_type_position(xfx, infix).
-
-op_type_associativity(fx, none).
-op_type_associativity(fy, right).
-op_type_associativity(xf, none).
-op_type_associativity(yf, left).
-op_type_associativity(yfx, left).
-op_type_associativity(xfy, right).
-op_type_associativity(xfx, none).
-
-left_precedence(Prec, yf, Prec).
-left_precedence(Prec, yfx, Prec).
-left_precedence(Prec0, xf, Prec) :-
-  is(Prec, -(Prec0, 1)).
-left_precedence(Prec0, xfy, Prec) :-
-  is(Prec, -(Prec0, 1)).
-left_precedence(Prec0, xfx, Prec) :-
-  is(Prec, -(Prec0, 1)).
-
-right_precedence(Prec, fy, Prec).
-right_precedence(Prec, xfy, Prec).
-right_precedence(Prec0, fx, Prec) :-
-  is(Prec, -(Prec0, 1)).
-right_precedence(Prec0, yfx, Prec) :-
-  is(Prec, -(Prec0, 1)).
-right_precedence(Prec0, xfx, Prec) :-
-  is(Prec, -(Prec0, 1)).
-
+% parse_expr//1 parses an expression with operators.
 parse_expr(Term) -->
   parse_leaf(Leaf),
-  ws,
-  parse_infix(Leaf, Term).
-parse_expr(Term) -->
-  parse_leaf(Term).
+  parse_infix(Leaf, Term),
+  print(expr),
+  print(Term).
 
-parse_infix(Left, Term) -->
-  parse_atom(atom(Op)),
-  { op(Prec, Type, Op),
-    op_type_position(Type, infix) },
-  ws,
-  parse_leaf(Right),
-  { insert_right(Left, op(Prec, Type, Op), Right, Term0) },
-  parse_infix(Term0, Term).
-parse_infix(Term, Term).
-
+% parse_leaf//1 parses an expression like 'prefix_op* atomic_term suffix_op*'
 parse_leaf(Term) -->
   parse_prefix(1200, Term0),
-  parse_suffix(Term0, Term).
+  parse_suffix(Term0, Term),
+  print(leaf),
+  print(Term).
 
+% parse_prefix//2 parses a prefix operator with precedence at most Prec0.
+% The base case is parsing an atomic term.
 parse_prefix(Prec0, Term) -->
   parse_atom(atom(Token)),
   { op(Prec1, Type, Token),
@@ -198,42 +201,75 @@ parse_prefix(Prec0, Term) -->
     right_precedence(Prec1, Type, Prec2) },
   ws,
   parse_prefix(Prec2, Term0),
-  { =(Term, expr(nil, op(Prec1, Type, Token), Term0)) }.
+  { =(Term, expr(nil, op(Prec1, Type, Token), Term0)) },
+  print(prefix),
+  print(Term).
 parse_prefix(_, Term) -->
-  parse_atomic_term(Term).
+  parse_atomic_term(Term),
+  print(atomic),
+  print(Term).
 
+% parse_suffix//2 parses a suffix operator given a Left tree.
+% The operator is inserted at the appropriate position to satisfy precedence.
+% The base case is outputting the provided Left tree.
 parse_suffix(Left, Term) -->
   ws,
   parse_atom(atom(Token)),
   { op(Prec, Type, Token),
     op_type_position(Type, suffix),
     insert_right(Left, op(Prec, Type, Token), nil, Term0) },
-  parse_suffix(Term0, Term).
+  parse_suffix(Term0, Term),
+  print(suffix),
+  print(Term).
 parse_suffix(Term, Term) --> [].
 
+% parse_infix//2 parses an infix operator with a Left tree followed by a leaf expression Right.
+% The operator is inserted at the appropriate position to satisfy precedence.
+% The base case is outputting the provided Left tree.
+parse_infix(Left, Term) -->
+  ws,
+  parse_atom(atom(Op)),
+  { op(Prec, Type, Op),
+    op_type_position(Type, infix) },
+  ws,
+  parse_leaf(Right),
+  { insert_right(Left, op(Prec, Type, Op), Right, Term0) },
+  parse_infix(Term0, Term),
+  print(infix),
+  print(Term).
+parse_infix(Term, Term).
+
+% insert_right(Left, Op, Arg, Term) inserts the given Arg at the Left tree using the operator Op.
+% It outputs the result in Term.
+%
+% For example, given Left = (1 + 2), Op = +, Arg = 3, then Term = ((1 + 2) + 3)
+% Likewise, given Left = (1 + 2), Op = *, Arg = 3, then Term = (1 + (2 * 3))
 insert_right(Expr, Op1, Arg, Term) :-
+  % Inserting operator with higher precedence than left tree.
   =(Expr, expr(Left, Op2, Right)),
   check_precedence(Op1, Op2, left),
   =(Term, expr(Expr, Op1, Arg)).
 insert_right(Expr, Op1, Arg, Term) :-
+  % Inserting operator with lower precedence than left tree.
   =(Expr, expr(Left, Op2, Right)),
-  =(Right, expr(_, _, _)),
   check_precedence(Op2, Op1, left),
   =(Term, expr(Left, Op2, expr(Right, Op1, Arg))).
 insert_right(Expr, Op1, Arg, Term) :-
+  % Inserting operator with conflicting precedence with left tree: go down one level.
   =(Expr, expr(Left, Op2, Right)),
   insert_right(Right, Op1, Arg, Right0),
   =(Term, expr(Left, Op2, Right0)).
-insert_right(Expr, Op1, Arg, Term) :-
-  =(Term, expr(Expr, Op1, Arg)).
 
+% check_precedence(Op1, Op2, Pos) checks that Op1 can have Op2 as child in position Pos.
+% If Pos corresponds to Op1's associativity, Op2's precedence may be greater than or equal to Op1's precedence.
+% Otherwise, Op2's precedence needs to be strictly greather than Op1's precedence.
 check_precedence(op(Prec1, Type1, _), op(Prec2, _, _), Pos) :-
   op_type_associativity(Type1, Pos),
-  is(Prec2_1, -(Prec2, 1)),
-  >(Prec1, Prec2_1).
+  >=(Prec1, Prec2).
 check_precedence(op(Prec1, _, _), op(Prec2, _, _), _) :-
   >(Prec1, Prec2).
 
+% Makes parse_term an alias to parse_expr.
 :- put_predicate(indicator(parse_term, 3), [
      dcg(struct(parse_term, [var('Term')]), [struct(parse_expr, [var('Term')])])
    ]).
