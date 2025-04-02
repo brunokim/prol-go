@@ -118,6 +118,32 @@ func TestPreludeLists(t *testing.T) {
 				v("T8"): fromList(int_(1), int_(2), int_(3)),
 			},
 		},
+		{
+			"Quoted atom",
+			"test_quoted_atom('a', ' ', '''', '%-()[]:/**/').",
+			clause(
+				s("query"),
+				s("test_quoted_atom", v("T1"), v("T2"), v("T3"), v("T4"))),
+			prol.Solution{
+				v("T1"): a("a"),
+				v("T2"): a(" "),
+				v("T3"): a("'"),
+				v("T4"): a("%-()[]:/**/"),
+			},
+		},
+		{
+			"Quoted string",
+			`test_quoted_string("a", "", "double->""<-quote", "1 2 3").`,
+			clause(
+				s("query"),
+				s("test_quoted_string", v("T1"), v("T2"), v("T3"), v("T4"))),
+			prol.Solution{
+				v("T1"): fromString("a"),
+				v("T2"): fromString(""),
+				v("T3"): fromString(`double->"<-quote`),
+				v("T4"): fromString("1 2 3"),
+			},
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

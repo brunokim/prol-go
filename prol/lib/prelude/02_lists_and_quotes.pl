@@ -70,8 +70,6 @@ parse_quoted_atom(atom(Name), L0, L) :-
 parse_atom(Atom, L0, L) :-
   parse_quoted_atom(Atom, L0, L).
 
-test_parse_quoted_atom('a', ' ', '''').
-
 
 % parse_quoted_string//1 parses a list of atom chars.
 
@@ -86,8 +84,6 @@ atom_list_to_ast([], atom([])).
 
 parse_list(List, L0, L) :-
   parse_quoted_string(List, L0, L).
-
-test_parse_quoted_string("", "a", "1 2 3").
 
 
 % Let's remove the \ escape for single-char atoms, which is non-standard.
