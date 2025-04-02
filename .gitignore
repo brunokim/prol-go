@@ -4,3 +4,7 @@
 
 # Executable
 main
+
+# Profiles
+cpu_prof.out
+mem_prof.out
