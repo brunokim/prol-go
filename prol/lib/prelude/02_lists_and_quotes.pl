@@ -36,8 +36,6 @@ parse_tail(struct(\., \.(X, \.(Xs, []))), L0, L) :- /* struct('.', [X, Xs]) */
 parse_term(Term, L0, L) :-
   parse_list(Term, L0, L).
 
-test_parse_list([ ], [/*comment*/], [1], [ 1 ], [1, 2], [1|2], [1, 2|X], [1|[2|[3|[]]]]).
-
 
 % Now let's parse quoted atoms, and get rid of our non-standard escape
 % for any char with backslash.

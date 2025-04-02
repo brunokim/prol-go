@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"iter"
 	"log"
+	"maps"
 	"slices"
 	"sort"
 	"strings"
@@ -27,6 +28,13 @@ func NewDatabase(rules ...Rule) *Database {
 		db.Assert(rule)
 	}
 	return db
+}
+
+func (db *Database) Clone() *Database {
+	return &Database{
+		indicators: slices.Clone(db.indicators),
+		index0:     maps.Clone(db.index0),
+	}
 }
 
 func (db *Database) Assert(rule Rule) {
