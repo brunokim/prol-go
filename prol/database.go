@@ -164,7 +164,7 @@ func (db *Database) Solve(query Clause, opts ...any) (iter.Seq[Solution], func()
 	var err error
 	seq := func(yield func(Solution) bool) {
 		s.yield = yield
-		err = s.dfs(query)
+		err = s.dfs(newContinuation(query))
 	}
 	errFn := func() error {
 		return err
@@ -323,8 +323,40 @@ func (s *solver) log(args ...any) {
 	}
 }
 
-func (s *solver) dfs(goals []Struct) error {
+// --- Continuation
+
+type continuation struct {
+	goals []Struct
+	child *continuation
+}
+
+func newContinuation(goals []Struct) *continuation {
+	return &continuation{goals: goals}
+}
+
+func (cont *continuation) isDone() bool {
+	return cont == nil
+}
+
+func (cont *continuation) next() (Struct, *continuation) {
+	goal, rest := cont.goals[0], cont.goals[1:]
+	if len(rest) > 0 {
+		return goal, &continuation{goals: rest, child: cont.child}
+	}
+	return goal, cont.child
+}
+
+func (cont *continuation) push(goals []Struct) *continuation {
 	if len(goals) == 0 {
+		return cont
+	}
+	return &continuation{goals: goals, child: cont}
+}
+
+// ---
+
+func (s *solver) dfs(cont *continuation) error {
+	if cont.isDone() {
 		// Found a solution
 		if !s.yield(s.solution()) {
 			return StopIterationError{}
@@ -335,7 +367,7 @@ func (s *solver) dfs(goals []Struct) error {
 		}
 		return nil
 	}
-	goal, rest := goals[0], goals[1:]
+	goal, cont := cont.next()
 	s.log(">>> goal:", goal.Indicator())
 	// Check call depth.
 	s.depth++
@@ -358,7 +390,7 @@ func (s *solver) dfs(goals []Struct) error {
 		if !ok {
 			continue
 		}
-		if err := s.dfs(slices.Concat(body, rest)); err != nil {
+		if err := s.dfs(cont.push(body)); err != nil {
 			return err
 		}
 	}
