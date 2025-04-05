@@ -47,7 +47,8 @@ func TestBootstrapParsesItself(t *testing.T) {
 	}
 	diff := cmp.Diff(db, compiledKB,
 		cmp.Exporter(exporter),
-		cmpopts.IgnoreUnexported(prol.Builtin{}))
+		cmpopts.IgnoreUnexported(prol.Builtin{}),
+		cmpopts.IgnoreFields(prol.Database{}, "index1"))
 	if diff != "" {
 		t.Errorf("difference between compilers (-want, +got):\n%s", diff)
 	}

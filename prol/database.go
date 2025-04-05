@@ -15,11 +15,49 @@ import (
 type Database struct {
 	indicators []Indicator
 	index0     map[Indicator][]Rule
+	index1     map[Indicator][]*ruleIndex
+}
+
+// f(1). f(s(a, b)). f(X). f(Y). f(p). f(Z).
+// ----------------- ----------- ----- -----
+//    constant         variable  const  var
+
+// ?- f(p) => [f(X), f(Z), f(p), f(Y)]
+// ?- f(s(A, B)) => [f(s(a, b)), f(X), f(Y), f(Z)]
+// ?- f(W) => [f(1), f(s(a, b)), f(X), f(Y), f(p), f(Z)]
+
+type ruleIndex struct {
+	isVar    bool
+	byVar    []Rule
+	byAtom   map[Atom][]Rule
+	byInt    map[Int][]Rule
+	byStruct map[Indicator][]Rule
+}
+
+type keyType int
+
+const (
+	atomKey keyType = iota
+	intKey
+	structKey
+)
+
+func newRuleIndex(isVar bool) *ruleIndex {
+	if isVar {
+		return &ruleIndex{isVar: true}
+	}
+	return &ruleIndex{
+		isVar:    false,
+		byAtom:   make(map[Atom][]Rule),
+		byInt:    make(map[Int][]Rule),
+		byStruct: make(map[Indicator][]Rule),
+	}
 }
 
 func NewDatabase(rules ...Rule) *Database {
 	db := &Database{
 		index0: make(map[Indicator][]Rule),
+		index1: make(map[Indicator][]*ruleIndex),
 	}
 	for _, rule := range builtins {
 		db.Assert(rule)
@@ -34,6 +72,7 @@ func (db *Database) Clone() *Database {
 	return &Database{
 		indicators: slices.Clone(db.indicators),
 		index0:     maps.Clone(db.index0),
+		index1:     maps.Clone(db.index1),
 	}
 }
 
@@ -43,6 +82,43 @@ func (db *Database) Assert(rule Rule) {
 		db.indicators = append(db.indicators, f)
 	}
 	db.index0[f] = append(db.index0[f], rule)
+	if f.Arity == 0 {
+		return
+	}
+	// Populate index1 from first arg type.
+	var firstArg Term
+	switch c := rule.(type) {
+	case Clause:
+		firstArg = c[0].Args[0]
+	case DCG:
+		firstArg = c[0].Args[0]
+	case Builtin:
+		return
+	default:
+		panic(fmt.Sprintf("unhandled rule type %T", rule))
+	}
+	// Add new index to list if we're starting a different block.
+	_, isVar := firstArg.(Var)
+	indices, ok := db.index1[f]
+	if !ok || indices[len(indices)-1].isVar != isVar {
+		db.index1[f] = append(indices, newRuleIndex(isVar))
+	}
+	n := len(db.index1[f])
+	lastIndex := db.index1[f][n-1]
+	// Append rule to index.
+	lastIndex.byVar = append(lastIndex.byVar, rule)
+	switch t := firstArg.(type) {
+	case Atom:
+		lastIndex.byAtom[t] = append(lastIndex.byAtom[t], rule)
+	case Int:
+		lastIndex.byInt[t] = append(lastIndex.byInt[t], rule)
+	case Struct:
+		lastIndex.byStruct[t.Indicator()] = append(lastIndex.byStruct[t.Indicator()], rule)
+	case Var:
+		// Do nothing
+	default:
+		panic(fmt.Sprintf("unhandled term type %T", firstArg))
+	}
 }
 
 func (db *Database) PredicateExists(goal Struct) bool {
@@ -50,15 +126,34 @@ func (db *Database) PredicateExists(goal Struct) bool {
 	return ok
 }
 
-func (db *Database) Matching(goal Struct) iter.Seq[Rule] {
-	return func(yield func(Rule) bool) {
-		f := goal.Indicator()
-		for _, rule := range db.index0[f] {
-			if !yield(rule) {
-				break
-			}
+func (db *Database) Matching(goal Struct) []Rule {
+	f := goal.Indicator()
+	indices, ok := db.index1[f]
+	if !ok {
+		return db.index0[f]
+	}
+	firstArg := Deref(goal.Args[0])
+	if _, ok := firstArg.(*Ref); ok {
+		return db.index0[f]
+	}
+	var rules []Rule
+	for _, index := range indices {
+		if index.isVar {
+			rules = append(rules, index.byVar...)
+			continue
+		}
+		switch t := firstArg.(type) {
+		case Atom:
+			rules = append(rules, index.byAtom[t]...)
+		case Int:
+			rules = append(rules, index.byInt[t]...)
+		case Struct:
+			rules = append(rules, index.byStruct[t.Indicator()]...)
+		default:
+			panic(fmt.Sprintf("unhandled term type %T", t))
 		}
 	}
+	return rules
 }
 
 func (db *Database) Solve(query Clause, opts ...any) (iter.Seq[Solution], func() error) {
@@ -182,10 +277,24 @@ func (s *solver) PutPredicate(ind Indicator, rules []Rule) bool {
 			return false
 		}
 	}
-	if _, ok := s.db.index0[ind]; !ok {
-		s.db.indicators = append(s.db.indicators, ind)
+	if _, ok := s.db.index0[ind]; ok {
+		// Clear existing predicate.
+		delete(s.db.index0, ind)
+		if ind.Arity > 0 {
+			delete(s.db.index1, ind)
+		}
 	}
-	s.db.index0[ind] = rules
+	if len(rules) == 0 {
+		// Delete element if there are no more rules.
+		slices.DeleteFunc(s.db.indicators, func(i Indicator) bool {
+			return i == ind
+		})
+		return true
+	}
+	// Otherwise, assert all other rules.
+	for _, rule := range rules {
+		s.db.Assert(rule)
+	}
 	return true
 }
 
@@ -240,7 +349,7 @@ func (s *solver) dfs(goals []Struct) error {
 	}
 	unwind := s.Unwind()
 	defer unwind()
-	for rule := range s.db.Matching(goal) {
+	for _, rule := range s.db.Matching(goal) {
 		unwind()
 		body, ok, err := rule.Unify(s, goal)
 		if err != nil {
