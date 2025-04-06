@@ -4,6 +4,7 @@
 
 # Executable
 main
+prol.test
 
 # Profiles
 cpu_prof.out
