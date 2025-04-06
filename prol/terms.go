@@ -200,8 +200,10 @@ func ToString(t Term) (string, error) {
 
 // Deref walks the chain of references until finding a non-ref term, or unbound ref.
 func Deref(t Term) Term {
-	if ref, ok := t.(*Ref); ok && ref.Value != nil {
+	ref, ok := t.(*Ref)
+	for ok && ref.Value != nil {
 		t = ref.Value
+		ref, ok = t.(*Ref)
 	}
 	return t
 }
