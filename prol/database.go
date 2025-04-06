@@ -284,13 +284,6 @@ func (s *solver) PutPredicate(ind Indicator, rules []Rule) bool {
 			delete(s.db.index1, ind)
 		}
 	}
-	if len(rules) == 0 {
-		// Delete element if there are no more rules.
-		slices.DeleteFunc(s.db.indicators, func(i Indicator) bool {
-			return i == ind
-		})
-		return true
-	}
 	// Otherwise, assert all other rules.
 	for _, rule := range rules {
 		s.db.Assert(rule)
@@ -492,8 +485,14 @@ func (db *Database) String() string {
 	var b strings.Builder
 	var cnt int
 	for _, ind := range db.indicators {
-		if len(db.index0[ind]) == 1 {
-			rule := db.index0[ind][0]
+		rules, ok := db.index0[ind]
+		if !ok {
+			// Indicator was deleted.
+			continue
+		}
+		if len(rules) == 1 {
+			// Don't print builtin rule.
+			rule := rules[0]
 			if _, ok := rule.(Builtin); ok {
 				continue
 			}
@@ -503,7 +502,7 @@ func (db *Database) String() string {
 		}
 		cnt++
 		fmt.Fprintf(&b, "%% %v\n", ind)
-		for j, rule := range db.index0[ind] {
+		for j, rule := range rules {
 			if j > 0 {
 				b.WriteRune('\n')
 			}
