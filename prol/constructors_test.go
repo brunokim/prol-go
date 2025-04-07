@@ -31,7 +31,11 @@ func clause(head prol.Struct, body ...prol.Struct) prol.Clause {
 }
 
 func dcg(head prol.Struct, body ...prol.Struct) prol.DCG {
-	return prol.NewDCG(append([]prol.Struct{head}, body...))
+	dcg, err := prol.NewDCG(append([]prol.Struct{head}, body...))
+	if err != nil {
+		panic(err.Error())
+	}
+	return dcg
 }
 
 func toList(term prol.Term) ([]prol.Term, prol.Term) {

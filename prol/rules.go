@@ -35,28 +35,33 @@ type DCG struct {
 
 func (DCG) isRule() {}
 
-func NewDCG(dcgGoals []Struct) DCG {
+func NewDCG(dcgGoals []Struct) (DCG, error) {
+	clause, err := toClause(dcgGoals)
+	if err != nil {
+		return DCG{}, err
+	}
 	return DCG{
 		dcgGoals: dcgGoals,
-		clause:   toClause(dcgGoals),
-	}
+		clause:   clause,
+	}, nil
 }
 
-func toClause(dcgGoals []Struct) Clause {
+func toClause(dcgGoals []Struct) (Clause, error) {
+	// TODO: use some gensym that prevents conflicts with user-defined variables.
 	var c Clause
 	head := dcgGoals[0]
 	c = append(c, Struct{head.Name, slices.Concat(head.Args, []Term{Var("L0"), Var("L")})})
-	var i int
-	for _, s := range dcgGoals[1:] {
+	var k int
+	for i, s := range dcgGoals[1:] {
 		// List
 		terms, tail := ToList(s)
 		if len(terms) > 0 {
 			if tail != Nil {
-				panic(fmt.Sprintf("invalid DCG"))
+				return nil, fmt.Errorf("invalid DCG: goal #%d: improper list: %v", i+1, s)
 			}
-			curr, next := Var(fmt.Sprintf("L%d", i)), Var(fmt.Sprintf("L%d", i+1))
+			curr, next := Var(fmt.Sprintf("L%d", k)), Var(fmt.Sprintf("L%d", k+1))
 			c = append(c, Struct{"=", []Term{curr, FromImproperList(terms, next)}})
-			i++
+			k++
 			continue
 		}
 		// Empty list
@@ -71,13 +76,13 @@ func toClause(dcgGoals []Struct) Clause {
 			continue
 		}
 		// Other grammar rules
-		curr, next := Var(fmt.Sprintf("L%d", i)), Var(fmt.Sprintf("L%d", i+1))
+		curr, next := Var(fmt.Sprintf("L%d", k)), Var(fmt.Sprintf("L%d", k+1))
 		c = append(c, Struct{s.Name, slices.Concat(s.Args, []Term{curr, next})})
-		i++
+		k++
 	}
-	curr := Var(fmt.Sprintf("L%d", i))
+	curr := Var(fmt.Sprintf("L%d", k))
 	c = append(c, Struct{"=", []Term{curr, Var("L")}})
-	return c
+	return c, nil
 }
 
 // --- Builtins ---
