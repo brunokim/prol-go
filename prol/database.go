@@ -164,7 +164,7 @@ func (db *Database) Solve(query Clause, opts ...any) (iter.Seq[Solution], func()
 	var err error
 	seq := func(yield func(Solution) bool) {
 		s.yield = yield
-		err = s.dfs(newContinuation(query))
+		err = s.dfs(newEnvironment(query))
 	}
 	errFn := func() error {
 		return err
@@ -316,40 +316,40 @@ func (s *solver) log(args ...any) {
 	}
 }
 
-// --- Continuation
+// --- Environment
 
-type continuation struct {
+type environment struct {
 	goals []Struct
-	child *continuation
+	parent *environment
 }
 
-func newContinuation(goals []Struct) *continuation {
-	return &continuation{goals: goals}
+func newEnvironment(goals []Struct) *environment {
+	return &environment{goals: goals}
 }
 
-func (cont *continuation) isDone() bool {
-	return cont == nil
+func (env *environment) isDone() bool {
+	return env == nil
 }
 
-func (cont *continuation) next() (Struct, *continuation) {
-	goal, rest := cont.goals[0], cont.goals[1:]
+func (env *environment) next() (Struct, *environment) {
+	goal, rest := env.goals[0], env.goals[1:]
 	if len(rest) > 0 {
-		return goal, &continuation{goals: rest, child: cont.child}
+		return goal, &environment{goals: rest, parent: env.parent}
 	}
-	return goal, cont.child
+	return goal, env.parent
 }
 
-func (cont *continuation) push(goals []Struct) *continuation {
+func (env *environment) push(goals []Struct) *environment {
 	if len(goals) == 0 {
-		return cont
+		return env
 	}
-	return &continuation{goals: goals, child: cont}
+	return &environment{goals: goals, parent: env}
 }
 
 // ---
 
-func (s *solver) dfs(cont *continuation) error {
-	if cont.isDone() {
+func (s *solver) dfs(env *environment) error {
+	if env.isDone() {
 		// Found a solution
 		if !s.yield(s.solution()) {
 			return StopIterationError{}
@@ -360,7 +360,7 @@ func (s *solver) dfs(cont *continuation) error {
 		}
 		return nil
 	}
-	goal, cont := cont.next()
+	goal, env := env.next()
 	s.log(">>> goal:", goal.Indicator())
 	// Check call depth.
 	s.depth++
@@ -383,7 +383,7 @@ func (s *solver) dfs(cont *continuation) error {
 		if !ok {
 			continue
 		}
-		if err := s.dfs(cont.push(body)); err != nil {
+		if err := s.dfs(env.push(body)); err != nil {
 			return err
 		}
 	}
