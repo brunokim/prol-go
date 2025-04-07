@@ -57,7 +57,7 @@ func compileDCG(ast Struct) (Rule, error) {
 	if err != nil {
 		return nil, fmt.Errorf("body: %w", err)
 	}
-	return DCG(append([]Struct{head}, body...)), nil
+	return NewDCG(append([]Struct{head}, body...)), nil
 }
 
 func compileClause(ast Struct) (Rule, error) {

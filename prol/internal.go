@@ -19,7 +19,7 @@ func clause(head Struct, body ...Struct) Clause {
 }
 
 func dcg(head Struct, body ...Struct) DCG {
-	return append(DCG{head}, body...)
+	return NewDCG(append([]Struct{head}, body...))
 }
 
 func toList(terms ...Term) Term {

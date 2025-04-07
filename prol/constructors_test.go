@@ -31,7 +31,7 @@ func clause(head prol.Struct, body ...prol.Struct) prol.Clause {
 }
 
 func dcg(head prol.Struct, body ...prol.Struct) prol.DCG {
-	return append(prol.DCG{head}, body...)
+	return prol.NewDCG(append([]prol.Struct{head}, body...))
 }
 
 func toList(term prol.Term) ([]prol.Term, prol.Term) {

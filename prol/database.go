@@ -91,7 +91,7 @@ func (db *Database) Assert(rule Rule) {
 	case Clause:
 		firstArg = c[0].Args[0]
 	case DCG:
-		firstArg = c[0].Args[0]
+		firstArg = c.dcgGoals[0].Args[0]
 	case Builtin:
 		return
 	default:
@@ -509,7 +509,7 @@ func (db *Database) String() string {
 			fmt.Fprintf(&b, "%v", rule)
 			if dcg, ok := rule.(DCG); ok && printDCGExpansion {
 				fmt.Fprintf(&b, "\n/*")
-				fmt.Fprintf(&b, "%v", dcg.toClause())
+				fmt.Fprintf(&b, "%v", dcg.clause)
 				fmt.Fprintf(&b, "*/")
 			}
 		}
