@@ -174,13 +174,6 @@ func putPredicateBuiltin(s Solver, goal Struct) ([]Struct, bool, error) {
 		if err != nil {
 			return isError(fmt.Errorf("put_predicate/2: rule #%d: %w", i+1, err))
 		}
-		/*
-		   if ind == (Indicator{"directive", 0}) {
-		       clause := varToRef(rules[i], map[Var]*Ref{}).(Clause)
-		       fmt.Println("Run", clause)
-		       return hasContinuation(clause.Body())
-		   }
-		*/
 	}
 	return isSuccess(s.PutPredicate(ind, rules))
 }
@@ -196,7 +189,7 @@ func assertzBuiltin(s Solver, goal Struct) ([]Struct, bool, error) {
 		// Execute directive immediately.
 		// TODO: consider other rule types.
 		clause := varToRef(rule, map[Var]*Ref{}).(Clause)
-		return hasContinuation(clause.Body())
+		return hasContinuation(clause[1:])
 	}
 	s.Assert(rule)
 	return isSuccess(true)

@@ -319,7 +319,7 @@ func (s *solver) log(args ...any) {
 // --- Environment
 
 type environment struct {
-	goals []Struct
+	goals  []Struct
 	parent *environment
 }
 

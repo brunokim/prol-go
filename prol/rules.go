@@ -26,14 +26,6 @@ type Clause []Struct
 
 func (Clause) isRule() {}
 
-func (c Clause) Head() Struct {
-	return c[0]
-}
-
-func (c Clause) Body() []Struct {
-	return c[1:]
-}
-
 // --- DCG ---
 
 type DCG []Struct
@@ -89,7 +81,7 @@ func (Builtin) isRule() {}
 // --- Indicator ---
 
 func (c Clause) Indicator() Indicator {
-	return c.Head().Indicator()
+	return c[0].Indicator()
 }
 
 func (c DCG) Indicator() Indicator {
@@ -138,10 +130,10 @@ func isError(err error) ([]Struct, bool, error) {
 
 func (c Clause) Unify(s Solver, goal Struct) ([]Struct, bool, error) {
 	c = varToRef(c, map[Var]*Ref{}).(Clause)
-	if ok := s.Unify(c.Head(), goal); !ok {
+	if ok := s.Unify(c[0], goal); !ok {
 		return isSuccess(false)
 	}
-	return hasContinuation(c.Body())
+	return hasContinuation(c[1:])
 }
 
 func (c DCG) Unify(s Solver, goal Struct) ([]Struct, bool, error) {
@@ -178,25 +170,27 @@ func goalString(goal Struct, isDCG bool) string {
 }
 
 func (c Clause) String() string {
-	head := goalString(c.Head() /*isDCG*/, false)
+	isDCG := false
+	head := goalString(c[0], isDCG)
 	if len(c) == 1 {
 		return fmt.Sprintf("%s.", head)
 	}
 	body := make([]string, len(c)-1)
-	for i, goal := range c.Body() {
-		body[i] = goalString(goal /*isDCG*/, false)
+	for i, goal := range c[1:] {
+		body[i] = goalString(goal, isDCG)
 	}
 	return fmt.Sprintf("%s :-\n  %s.", head, strings.Join(body, ",\n  "))
 }
 
 func (c DCG) String() string {
-	head := goalString(c[0] /*isDCG*/, true)
+	isDCG := true
+	head := goalString(c[0], isDCG)
 	if len(c) == 1 {
 		return fmt.Sprintf("%s --> [].", head)
 	}
 	body := make([]string, len(c)-1)
 	for i, s := range c[1:] {
-		body[i] = goalString(s /*isDCG*/, true)
+		body[i] = goalString(s, isDCG)
 	}
 	return fmt.Sprintf("%s -->\n  %s.", head, strings.Join(body, ",\n  "))
 }
