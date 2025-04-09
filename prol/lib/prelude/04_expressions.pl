@@ -180,16 +180,12 @@ parse_atomic_term(Term) -->
 % parse_expr//1 parses an expression with operators.
 parse_expr(Term) -->
   parse_leaf(Leaf),
-  parse_infix(Leaf, Term),
-  print(expr),
-  print(Term).
+  parse_infix(Leaf, Term).
 
 % parse_leaf//1 parses an expression like 'prefix_op* atomic_term suffix_op*'
 parse_leaf(Term) -->
   parse_prefix(1200, Term0),
-  parse_suffix(Term0, Term),
-  print(leaf),
-  print(Term).
+  parse_suffix(Term0, Term).
 
 % parse_prefix//2 parses a prefix operator with precedence at most Prec0.
 % The base case is parsing an atomic term.
@@ -201,13 +197,9 @@ parse_prefix(Prec0, Term) -->
     right_precedence(Prec1, Type, Prec2) },
   ws,
   parse_prefix(Prec2, Term0),
-  { =(Term, expr(nil, op(Prec1, Type, Token), Term0)) },
-  print(prefix),
-  print(Term).
+  { =(Term, expr(nil, op(Prec1, Type, Token), Term0)) }.
 parse_prefix(_, Term) -->
-  parse_atomic_term(Term),
-  print(atomic),
-  print(Term).
+  parse_atomic_term(Term).
 
 % parse_suffix//2 parses a suffix operator given a Left tree.
 % The operator is inserted at the appropriate position to satisfy precedence.
@@ -218,9 +210,7 @@ parse_suffix(Left, Term) -->
   { op(Prec, Type, Token),
     op_type_position(Type, suffix),
     insert_right(Left, op(Prec, Type, Token), nil, Term0) },
-  parse_suffix(Term0, Term),
-  print(suffix),
-  print(Term).
+  parse_suffix(Term0, Term).
 parse_suffix(Term, Term) --> [].
 
 % parse_infix//2 parses an infix operator with a Left tree followed by a leaf expression Right.
@@ -234,10 +224,8 @@ parse_infix(Left, Term) -->
   ws,
   parse_leaf(Right),
   { insert_right(Left, op(Prec, Type, Op), Right, Term0) },
-  parse_infix(Term0, Term),
-  print(infix),
-  print(Term).
-parse_infix(Term, Term).
+  parse_infix(Term0, Term).
+parse_infix(Term, Term) --> [].
 
 % insert_right(Left, Op, Arg, Term) inserts the given Arg at the Left tree using the operator Op.
 % It outputs the result in Term.
@@ -273,10 +261,3 @@ check_precedence(op(Prec1, _, _), op(Prec2, _, _), _) :-
 :- put_predicate(indicator(parse_term, 3), [
      dcg(struct(parse_term, [var('Term')]), [struct(parse_expr, [var('Term')])])
    ]).
-
-test_parse_expr.
-test_parse_expr(1).
-test_parse_expr(1, a, X, f(g, h), [c, d]).
-test_parse_expr((1), ( 1 ), f((g)), +(1,2)).
-test_parse_expr(+ 2, - 1, +2, -1).
-test_parse_expr(- -1, + -1, + +2).

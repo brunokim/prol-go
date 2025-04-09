@@ -2,6 +2,7 @@ package prol_test
 
 import (
 	_ "embed"
+	"errors"
 	"reflect"
 	"testing"
 
@@ -93,8 +94,9 @@ func TestPreludeLists(t *testing.T) {
 	db := prol.Bootstrap()
 	err1 := db.Interpret(commentsFile)
 	err2 := db.Interpret(listsFile)
-	if err1 != nil || err2 != nil {
-		t.Errorf("source error: %v, %v", err1, err2)
+	err := errors.Join(err1, err2)
+	if err != nil {
+		t.Errorf("source error: %v", err)
 	}
 	tests := []struct {
 		name    string
@@ -173,8 +175,9 @@ func TestPreludeDCG(t *testing.T) {
 	err1 := db.Interpret(commentsFile)
 	err2 := db.Interpret(listsFile)
 	err3 := db.Interpret(dcgFile)
-	if err1 != nil || err2 != nil || err3 != nil {
-		t.Errorf("source error: %v, %v", err1, err2)
+	err := errors.Join(err1, err2, err3)
+	if err != nil {
+		t.Errorf("source error: %v", err)
 	}
 	tests := []struct {
 		name    string
@@ -254,6 +257,86 @@ func TestPreludeDCG(t *testing.T) {
 				t.Errorf("test interpret err: %v", err)
 			}
 			got, err := db.FirstSolution(test.query)
+			if err != nil {
+				t.Fatalf("want solution, got: %v", err)
+			}
+			if diff := cmp.Diff(test.want, got, opts...); diff != "" {
+				t.Errorf("(-want, +got):\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestPreludeExpressions(t *testing.T) {
+	db := prol.Bootstrap()
+	err1 := db.Interpret(commentsFile)
+	err2 := db.Interpret(listsFile)
+	err3 := db.Interpret(dcgFile)
+	err4 := db.Interpret(expressionsFile)
+	err := errors.Join(err1, err2, err3, err4)
+	if err != nil {
+		t.Errorf("source error: %v", err)
+	}
+	tests := []struct {
+		name    string
+		content string
+		query   prol.Clause
+		want    prol.Solution
+	}{
+		{
+			"Parse atomic expr",
+			`test_parse_expr.`,
+			clause(s("query"), s("test_parse_expr")),
+			prol.Solution{},
+		},
+		{
+			"Parse atomic exprs",
+			`test_parse_expr(1, a, X, f(g, h), [c, d]).`,
+			clause(s("query"), s("test_parse_expr", v("T1"), v("T2"), v("T3"), v("T4"), v("T5"))),
+			prol.Solution{
+				v("T1"): int_(1),
+				v("T2"): a("a"),
+				v("T3"): ref("T3"),
+				v("T4"): s("f", a("g"), a("h")),
+				v("T5"): fromList(a("c"), a("d")),
+			},
+		},
+		{
+			"Parse parens",
+			`test_parse_expr((1), ( 1 ), f((g)), +(1,2)).`,
+			clause(s("query"), s("test_parse_expr", v("T1"), v("T2"), v("T3"), v("T4"))),
+			prol.Solution{
+				v("T1"): int_(1),
+				v("T2"): int_(1),
+				v("T3"): s("f", a("g")),
+				v("T4"): s("+", int_(1), int_(2)),
+			},
+		},
+		{
+			"Parse prefix",
+			`f(+ 2)`,
+			clause(s("query"), s("f", v("T1") /*, v("T2"), v("T3"), v("T4")*/)),
+			prol.Solution{
+				v("T1"): s("+", int_(2)),
+				v("T2"): s("-", int_(1)),
+				v("T3"): s("+", int_(2)),
+				v("T4"): s("-", int_(1)),
+			},
+		},
+		// test_parse_expr(- -1, + -1, + +2).
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			opts := cmp.Options{
+				cmp.AllowUnexported(prol.Ref{}),
+				cmpopts.IgnoreFields(prol.Ref{}, "id"),
+			}
+			db := db.Clone()
+			err := db.Interpret(test.content, "trace")
+			if err != nil {
+				t.Errorf("test interpret err: %v", err)
+			}
+			got, err := db.FirstSolution(test.query, "trace")
 			if err != nil {
 				t.Fatalf("want solution, got: %v", err)
 			}

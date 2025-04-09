@@ -391,7 +391,7 @@ func (s *solver) dfs(env *environment) error {
 			return err
 		}
 	}
-	s.log("<<< backtrack")
+	//s.log("<<< backtrack")
 	return nil
 }
 
@@ -411,9 +411,7 @@ func (s *solver) Unwind() func() bool {
 
 func (s *solver) Unify(t1, t2 Term) bool {
 	t1, t2 = Deref(t1), Deref(t2)
-	if s.trace {
-		log.Println("=== unify", t1, t2)
-	}
+	//s.log("=== unify", t1, t2)
 	s1, isStruct1 := t1.(Struct)
 	s2, isStruct2 := t2.(Struct)
 	if isStruct1 && isStruct2 {
@@ -440,9 +438,7 @@ func (s *solver) Unify(t1, t2 Term) bool {
 }
 
 func (s *solver) bind(ref *Ref, t Term) bool {
-	if s.trace {
-		log.Println("::: bind ", ref, t)
-	}
+	//s.log("::: bind ", ref, t)
 	ref.Value = t
 	s.trail = append(s.trail, ref)
 	return true
