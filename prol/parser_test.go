@@ -332,7 +332,7 @@ func TestPreludeExpressions(t *testing.T) {
 				cmpopts.IgnoreFields(prol.Ref{}, "id"),
 			}
 			db := db.Clone()
-			err := db.Interpret(test.content, "trace")
+			err := db.Interpret(test.content)
 			if err != nil {
 				t.Errorf("test interpret err: %v", err)
 			}
