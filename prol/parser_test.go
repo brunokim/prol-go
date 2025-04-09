@@ -167,3 +167,99 @@ func TestPreludeLists(t *testing.T) {
 		})
 	}
 }
+
+func TestPreludeDCG(t *testing.T) {
+	db := prol.Bootstrap()
+	err1 := db.Interpret(commentsFile)
+	err2 := db.Interpret(listsFile)
+	err3 := db.Interpret(dcgFile)
+	if err1 != nil || err2 != nil || err3 != nil {
+		t.Errorf("source error: %v, %v", err1, err2)
+	}
+	tests := []struct {
+		name    string
+		content string
+		query   prol.Clause
+		want    prol.Solution
+	}{
+		{
+			"Empty DCG",
+			"test_dcg([]) --> [].",
+			clause(
+				s("query"),
+				s("test_dcg", v("T"), fromString(""), v("Rest"))),
+			prol.Solution{
+				v("T"):    a("[]"),
+				v("Rest"): a("[]"),
+			},
+		},
+		{
+			"Atom goal",
+			`one_atom --> "a". test_dcg(1) --> one_atom.`,
+			clause(
+				s("query"),
+				s("test_dcg", v("T"), fromString("a"), v("Rest"))),
+			prol.Solution{
+				v("T"):    int_(1),
+				v("Rest"): a("[]"),
+			},
+		},
+		{
+			"A var",
+			`a_struct(p(0)) --> []. test_dcg(X) --> a_struct(X).`,
+			clause(
+				s("query"),
+				s("test_dcg", s("p", v("T")), fromString(""), v("Rest"))),
+			prol.Solution{
+				v("T"):    int_(0),
+				v("Rest"): a("[]"),
+			},
+		},
+		{
+			"Two vars",
+			`foo(y) --> [y]. test_dcg(P, Q) --> [P], foo(Q).`,
+			clause(
+				s("query"),
+				s("test_dcg", v("A"), v("B"), fromString("xy"), v("Rest"))),
+			prol.Solution{
+				v("A"):    a("x"),
+				v("B"):    a("y"),
+				v("Rest"): a("[]"),
+			},
+		},
+		{
+			"Multiple DCG goals",
+			`test(x, z).
+             foo(z, w).
+             test_dcg(a(X), Y) --> [X], ":", { test(X, _Z), foo(_Z, Y) }.`,
+			clause(
+				s("query"),
+				s("test_dcg", v("A"), v("B"), fromString("x:"), v("Rest"))),
+			prol.Solution{
+				v("A"):    s("a", a("x")),
+				v("B"):    a("w"),
+				v("Rest"): a("[]"),
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			opts := cmp.Options{
+				cmp.AllowUnexported(prol.Ref{}),
+				cmpopts.IgnoreFields(prol.Ref{}, "id"),
+			}
+			db := db.Clone()
+			err := db.Interpret(test.content)
+			if err != nil {
+				t.Errorf("test interpret err: %v", err)
+			}
+			got, err := db.FirstSolution(test.query)
+			if err != nil {
+				t.Fatalf("want solution, got: %v", err)
+			}
+			if diff := cmp.Diff(test.want, got, opts...); diff != "" {
+				t.Errorf("(-want, +got):\n%s", diff)
+			}
+		})
+	}
+}

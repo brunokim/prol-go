@@ -82,15 +82,18 @@ func (db *Database) Assert(rule Rule) {
 		db.indicators = append(db.indicators, f)
 	}
 	db.index0[f] = append(db.index0[f], rule)
-	if f.Arity == 0 {
-		return
-	}
 	// Populate index1 from first arg type.
 	var firstArg Term
 	switch c := rule.(type) {
 	case Clause:
+		if f.Arity == 0 {
+			return
+		}
 		firstArg = c[0].Args[0]
 	case DCG:
+		if f.Arity == 2 {
+			return
+		}
 		firstArg = c.dcgGoals[0].Args[0]
 	case Builtin:
 		return
@@ -185,26 +188,27 @@ func (db *Database) FirstSolution(query Clause, opts ...any) (Solution, error) {
 
 func (db *Database) Interpret(text string, opts ...any) error {
 	chars := FromString(text)
-	rest := MustVar("Rest")
 	for {
-		_rest0, rule := MustVar("_Rest0"), MustVar("Rule")
 		query := Clause{
 			Struct{"query", nil},
-			Struct{"ws", []Term{chars, _rest0}},
-			Struct{"parse_rule", []Term{rule, _rest0, rest}},
-			Struct{"assertz", []Term{rule}},
+			Struct{"ws", []Term{chars, v("_Rest0")}},
+			Struct{"parse_rule", []Term{v("Rule"), v("_Rest0"), v("Rest")}},
+			Struct{"assertz", []Term{v("Rule")}},
 		}
 		solution, err := db.FirstSolution(query, opts...)
 		if err != nil {
 			break
 		}
-		chars = solution[rest]
+		chars = solution[v("Rest")]
 	}
 	log.Println("--- finished asserts ---")
 	solution, err := db.FirstSolution(Clause{
 		Struct{"query", nil},
-		Struct{"ws", []Term{chars, rest}}}, opts...)
-	trailing, err := ToString(solution[rest])
+		Struct{"ws", []Term{chars, v("Rest")}}}, opts...)
+	if err != nil {
+		return err
+	}
+	trailing, err := ToString(solution[v("Rest")])
 	if err != nil {
 		return err
 	}

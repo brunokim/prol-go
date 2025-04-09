@@ -33,13 +33,6 @@ parse_rule(Rule, L0, L) :-
   parse_dcg(Rule, L0, L).
 
 
-test_dcg([]) --> [].
-test_dcg(1) --> an_atom.
-test_dcg(X) --> a_struct(X).
-test_dcg(P, Q) --> [P], test_dcg(Q).
-test_dcg(a(X), Y) --> X, ":", { test(X, _Z), foo(_Z, Y) }.
-
-
 % parse_directive//1 parses a directive, that is, a rule for immediate execution.
 
 parse_directive(clause(struct(directive, []), Goals)) -->

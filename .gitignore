@@ -5,6 +5,7 @@
 # Executable
 main
 prol.test
+debug.test*
 
 # Profiles
 cpu_prof.out

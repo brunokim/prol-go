@@ -65,13 +65,17 @@ func toClause(dcgGoals []Struct) (Clause, error) {
 			continue
 		}
 		// Empty list
-		if tail == Nil {
+		if s.Name == "[]" && len(s.Args) == 0 {
 			continue
 		}
 		// Embedded code
 		if s.Name == "{}" {
-			for _, arg := range s.Args {
-				c = append(c, arg.(Struct))
+			for j, arg := range s.Args {
+				goal, ok := arg.(Struct)
+				if !ok {
+					return nil, fmt.Errorf("invalid DCG: goal #%d: subgoal #%d: not a struct: %v", i+1, j+1, arg)
+				}
+				c = append(c, goal)
 			}
 			continue
 		}
