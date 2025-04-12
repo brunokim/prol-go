@@ -28,8 +28,8 @@ func TestYAMLLogger(t *testing.T) {
 	tests := []struct {
 		parts []string
 	}{
-		{[]string{"10", "'debug message'"}},
-		{[]string{"20", "'info message'"}},
+		{[]string{"DEBUG", "'debug message'"}},
+		{[]string{"INFO", "'info message'"}},
 	}
 
 	pattern := `level=(.*) file='logger_test.go' line=[0-9]+ package='github.com/brunokim/prol-go/kif_test' func=TestYAMLLogger message=(.*)`
@@ -64,8 +64,8 @@ func TestJSONLogger(t *testing.T) {
 	tests := []struct {
 		parts []string
 	}{
-		{[]string{"10", "debug message"}},
-		{[]string{"20", "info message"}},
+		{[]string{"DEBUG", "debug message"}},
+		{[]string{"INFO", "info message"}},
 	}
 
 	pattern := `{"level":"(.*)","file":"logger_test.go","line":"[0-9]+","package":"github.com/brunokim/prol-go/kif_test","func":"TestJSONLogger","message":"(.*)"}`

@@ -36,13 +36,14 @@ type KV struct {
 // LogLevel is the level of logging.
 type LogLevel int
 
+//go:generate go run golang.org/x/tools/cmd/stringer -type LogLevel .
 const (
 	DEBUG LogLevel = 10
-	INFO           = 20
-	WARN           = 30
-	ERROR          = 40
-	FATAL          = 50
-	PANIC          = 60
+	INFO  LogLevel = 20
+	WARN  LogLevel = 30
+	ERROR LogLevel = 40
+	FATAL LogLevel = 50
+	PANIC LogLevel = 60
 )
 
 // OnError ...
