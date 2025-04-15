@@ -224,7 +224,7 @@ func RefToTerm(x Term) Term {
 // --- String ---
 
 var (
-	atomRE = regexp.MustCompile(`^([\p{Ll}][\pL\pN_]*|\[\])$`)
+	atomRE = regexp.MustCompile(`^([\p{Ll}][\pL\pN_]*|\[\]|[=<>+*/^\\-]+)$`)
 )
 
 func (t Atom) String() string {

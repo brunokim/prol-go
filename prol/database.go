@@ -2,16 +2,14 @@ package prol
 
 import (
 	"fmt"
-	"io"
 	"iter"
 	"log"
 	"maps"
-	"os"
-	"regexp"
 	"slices"
 	"sort"
 	"strings"
-	"unicode/utf8"
+
+	"github.com/brunokim/prol-go/kif"
 )
 
 // --- Database ---
@@ -20,6 +18,7 @@ type Database struct {
 	indicators []Indicator
 	index0     map[Indicator][]Rule
 	index1     map[Indicator][]*ruleIndex
+	Logger     *kif.Logger
 }
 
 // f(1). f(s(a, b)). f(X). f(Y). f(p). f(Z).
@@ -86,6 +85,7 @@ func (db *Database) Assert(rule Rule) {
 		db.indicators = append(db.indicators, f)
 	}
 	db.index0[f] = append(db.index0[f], rule)
+	db.Logger.Debug(kif.KV{"msg", "assert rule"}, kif.KV{"rule", rule})
 	// Populate index1 from first arg type.
 	var firstArg Term
 	switch c := rule.(type) {
@@ -248,22 +248,15 @@ type solver struct {
 	trail []*Ref
 	yield func(Solution) bool
 	// Opts
-	trace        bool
 	depth        int
 	maxDepth     int
 	numSolutions int
 	limit        int
-	// Trace
-	traceStream io.Writer
 }
 
 func (s *solver) readOpts(opts []any) {
 	for i := 0; i < len(opts); {
 		switch opts[i] {
-		case "trace":
-			s.trace = true
-			s.traceStream = os.Stderr
-			i += 1
 		case "max_depth":
 			s.maxDepth = opts[i+1].(int)
 			i += 2
@@ -319,76 +312,6 @@ func (s *solver) solution() Solution {
 	return m
 }
 
-type kv struct {
-	key   string
-	value any
-}
-
-type thunk func() any
-
-func (s *solver) log(kvs ...kv) {
-	if !s.trace {
-		return
-	}
-	fmt.Fprintf(s.traceStream, "depth=%d", s.depth)
-	var toString func(value any) string
-	toString = func(value any) string {
-		switch v := value.(type) {
-		case string:
-			return v
-		case fmt.Stringer:
-			return v.String()
-		case thunk:
-			return toString(v())
-		default:
-			return fmt.Sprintf("%p", value)
-		}
-	}
-	for _, kv := range kvs {
-		fmt.Fprintf(s.traceStream, " %s=%v", logEscape(kv.key), logEscape(toString(kv.value)))
-	}
-	fmt.Fprint(s.traceStream, "\n")
-}
-
-func logEscape(s string) string {
-	re := regexp.MustCompile(`[^\pN\pL_]`)
-	var hasReplacement bool
-	replaced := re.ReplaceAllStringFunc(s, func(ch string) string {
-		hasReplacement = true
-		if ch == `"` {
-			return `\"`
-		}
-		if ch == "\n" {
-			return `\n`
-		}
-		r, ok := singleRune(ch)
-		if !ok {
-			// Should never happen
-			panic(fmt.Sprintf("Unexpected escape %q", ch))
-		}
-		if r < 0x20 {
-			// Control character
-			return fmt.Sprintf("\\x%02x", ch[0])
-		}
-		return ch
-	})
-	if hasReplacement {
-		return `"` + replaced + `"`
-	}
-	return s
-}
-
-func singleRune(ch string) (rune, bool) {
-	r, size := utf8.DecodeRuneInString(ch)
-	if len(ch) != size {
-		return r, false
-	}
-	if r == utf8.RuneError && size == 1 {
-		return r, false
-	}
-	return r, true
-}
-
 // --- Environment
 
 type environment struct {
@@ -434,10 +357,10 @@ func (s *solver) dfs(env *environment) error {
 		return nil
 	}
 	goal, env := env.next()
-	s.log(kv{"msg", "search"}, kv{"goal", goal.Indicator()})
-	// Check call depth.
 	s.depth++
 	defer func() { s.depth-- }()
+	s.db.Logger.Log(kif.DEBUG, kif.KV{"msg", "search"}, kif.KV{"depth", s.depth}, kif.KV{"goal", goal.Indicator()})
+	// Check call depth.
 	if s.maxDepth > 0 && s.depth > s.maxDepth {
 		return MaxDepthError{}
 	}
@@ -460,7 +383,7 @@ func (s *solver) dfs(env *environment) error {
 			return err
 		}
 	}
-	s.log(kv{"msg", "backtrack"})
+	s.db.Logger.Log(kif.DEBUG, kif.KV{"msg", "backtrack"}, kif.KV{"depth", s.depth})
 	return nil
 }
 
@@ -480,7 +403,7 @@ func (s *solver) Unwind() func() bool {
 
 func (s *solver) Unify(t1, t2 Term) bool {
 	t1, t2 = Deref(t1), Deref(t2)
-	s.log(kv{"msg", "unify"}, kv{"t1", t1}, kv{"t2", t2})
+	s.db.Logger.Log(kif.DEBUG-1, kif.KV{"msg", "unify"}, kif.KV{"t1", t1}, kif.KV{"t2", t2})
 	s1, isStruct1 := t1.(Struct)
 	s2, isStruct2 := t2.(Struct)
 	if isStruct1 && isStruct2 {
@@ -507,7 +430,7 @@ func (s *solver) Unify(t1, t2 Term) bool {
 }
 
 func (s *solver) bind(ref *Ref, t Term) bool {
-	s.log(kv{"msg", "bind"}, kv{"ref", ref}, kv{"t", t})
+	s.db.Logger.Log(kif.DEBUG-2, kif.KV{"msg", "bind"}, kif.KV{"ref", ref}, kif.KV{"t", t})
 	ref.Value = t
 	s.trail = append(s.trail, ref)
 	return true

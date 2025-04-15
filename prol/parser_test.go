@@ -9,6 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 
+	"github.com/brunokim/prol-go/kif"
 	"github.com/brunokim/prol-go/prol"
 )
 
@@ -332,11 +333,18 @@ func TestPreludeExpressions(t *testing.T) {
 				cmpopts.IgnoreFields(prol.Ref{}, "id"),
 			}
 			db := db.Clone()
-			err := db.Interpret(test.content)
+			var err error
+			db.Logger, err = kif.NewFileLogger("testoutput/" + test.name + ".log")
+			if err != nil {
+				t.Fatalf("error opening log: %v", err)
+			}
+			defer db.Logger.Close()
+			db.Logger.DisableCaller = true
+			err = db.Interpret(test.content)
 			if err != nil {
 				t.Errorf("test interpret err: %v", err)
 			}
-			got, err := db.FirstSolution(test.query, "trace")
+			got, err := db.FirstSolution(test.query)
 			if err != nil {
 				t.Fatalf("want solution, got: %v", err)
 			}

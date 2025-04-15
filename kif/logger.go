@@ -59,7 +59,7 @@ const (
 type Encoder int
 
 const (
-	YAMLFlowEncoder Encoder = iota
+	LogfmtEncoder Encoder = iota
 	JSONEncoder
 )
 
@@ -68,7 +68,7 @@ func NewLogger(out io.WriteCloser) *Logger {
 	return &Logger{
 		out:         out,
 		shouldClose: false,
-		encoder:     yamlFlowEncoder{},
+		encoder:     logfmtEncoder{},
 		LogLevel:    DEBUG,
 	}
 }
@@ -100,8 +100,8 @@ func (l *Logger) Close() error {
 
 func (l *Logger) SetEncoder(encoder Encoder) {
 	switch encoder {
-	case YAMLFlowEncoder:
-		l.encoder = yamlFlowEncoder{}
+	case LogfmtEncoder:
+		l.encoder = logfmtEncoder{}
 	case JSONEncoder:
 		l.encoder = jsonEncoder{}
 	}
@@ -132,7 +132,7 @@ func (l *Logger) Log(level LogLevel, kvs ...KV) {
 }
 
 func (l *Logger) log(level LogLevel, kvs ...KV) {
-	if l.out == nil {
+	if l == nil || l.out == nil {
 		return
 	}
 	if level < l.LogLevel {
@@ -185,8 +185,8 @@ func (l *Logger) logEntry(key string, value any) {
 	l.writeString(l.encoder.toString(value))
 }
 
-func (l *Logger) writeString(format string, args ...any) {
-	_, err := fmt.Fprintf(l.out, format, args...)
+func (l *Logger) writeString(text string) {
+	_, err := l.out.Write([]byte(text))
 	if err == nil {
 		return
 	}
@@ -225,15 +225,15 @@ type logEncoder interface {
 
 // ---
 
-type yamlFlowEncoder struct{}
+type logfmtEncoder struct{}
 
 var (
-	yamlSymbolRE = regexp.MustCompile(`[^\pN\pL_]`)
+	logfmtSymbolRE = regexp.MustCompile(`[\s'\\=]`)
 )
 
-func (yamlFlowEncoder) escape(text string) string {
+func (logfmtEncoder) escape(text string) string {
 	var hasReplacement bool
-	replaced := yamlSymbolRE.ReplaceAllStringFunc(text, func(ch string) string {
+	replaced := logfmtSymbolRE.ReplaceAllStringFunc(text, func(ch string) string {
 		hasReplacement = true
 		r, _ := utf8.DecodeRuneInString(ch)
 		if r == '\'' {
@@ -253,20 +253,20 @@ func (yamlFlowEncoder) escape(text string) string {
 	return "'" + replaced + "'"
 }
 
-func (enc yamlFlowEncoder) toString(x any) string {
+func (enc logfmtEncoder) toString(x any) string {
 	return enc.escape(fmt.Sprintf("%v", x))
 }
 
-func (yamlFlowEncoder) startLine() string {
+func (logfmtEncoder) startLine() string {
 	return ""
 }
-func (yamlFlowEncoder) fieldSep() string {
+func (logfmtEncoder) fieldSep() string {
 	return " "
 }
-func (yamlFlowEncoder) entrySep() string {
+func (logfmtEncoder) entrySep() string {
 	return "="
 }
-func (yamlFlowEncoder) endLine() string {
+func (logfmtEncoder) endLine() string {
 	return "\n"
 }
 
