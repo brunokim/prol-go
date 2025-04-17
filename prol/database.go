@@ -190,6 +190,32 @@ func (db *Database) FirstSolution(query Clause, opts ...any) (Solution, error) {
 	return solution, errFn()
 }
 
+func (db *Database) Query(text string, opts ...any) (Rule, error) {
+	chars := FromString("query :- " + text)
+	query := Clause{
+		Struct{"query", nil},
+		Struct{"ws", []Term{chars, v("_Rest0")}},
+		Struct{"parse_rule", []Term{v("Rule"), v("_Rest0"), v("_Rest1")}},
+		Struct{"ws", []Term{v("_Rest1"), v("Rest")}},
+	}
+	solution, err := db.FirstSolution(query, opts...)
+	if err != nil {
+		return nil, err
+	}
+	trailing, err := ToString(solution[v("Rest")])
+	if err != nil {
+		return nil, err
+	}
+	if trailing != "" {
+		return nil, fmt.Errorf("trailing characters: %q", trailing)
+	}
+	rule, err := CompileRule(solution[v("Rule")])
+	if err != nil {
+		return nil, err
+	}
+	return rule, nil
+}
+
 func (db *Database) Interpret(text string, opts ...any) error {
 	chars := FromString(text)
 	for {
@@ -230,6 +256,7 @@ type Solver interface {
 	Assert(rule Rule)
 	Unify(t1, t2 Term) bool
 	Unwind() func() bool
+	Interpret(text string) error
 }
 
 type Solution map[Var]Term
@@ -297,6 +324,10 @@ func (s *solver) PutPredicate(ind Indicator, rules []Rule) bool {
 
 func (s *solver) Assert(rule Rule) {
 	s.db.Assert(rule)
+}
+
+func (s *solver) Interpret(text string) error {
+	return s.db.Interpret(text)
 }
 
 // --- Search ---

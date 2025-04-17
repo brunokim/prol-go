@@ -3,6 +3,7 @@ package prol
 import (
 	"fmt"
 	"log"
+	"os"
 	"strconv"
 )
 
@@ -212,6 +213,19 @@ func isBuiltin(s Solver, goal Struct) ([]Struct, bool, error) {
 	return isSuccess(s.Unify(goal.Args[0], arg2))
 }
 
+func consultBuiltin(s Solver, goal Struct) ([]Struct, bool, error) {
+	arg1 := Deref(goal.Args[0])
+	bs, err := os.ReadFile(string(arg1.(Atom)))
+	if err != nil {
+		return isError(fmt.Errorf("consult/1: arg #1: %w", err))
+	}
+	err = s.Interpret(string(bs))
+	if err != nil {
+		return isError(fmt.Errorf("consult/1: arg #1: %w", err))
+	}
+	return isSuccess(true)
+}
+
 var builtins = []Builtin{
 	Builtin{Indicator{"=", 2}, unifyBuiltin},
 	Builtin{Indicator{"neq", 2}, notEqualsBuiltin},
@@ -233,4 +247,5 @@ var builtins = []Builtin{
 	Builtin{Indicator{"assertz", 1}, assertzBuiltin},
 	Builtin{Indicator{"print", 1}, printBuiltin},
 	Builtin{Indicator{"is", 2}, isBuiltin},
+	Builtin{Indicator{"consult", 1}, consultBuiltin},
 }
