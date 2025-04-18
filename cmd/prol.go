@@ -1,13 +1,13 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
+	"io"
 	"iter"
 	"log"
-	"os"
 
 	"github.com/brunokim/prol-go/prol"
+	"github.com/chzyer/readline"
 )
 
 type shellState int
@@ -20,15 +20,20 @@ const (
 type shell struct {
 	state         shellState
 	db            *prol.Database
+	rl            *readline.Instance
 	nextSolution  func() (prol.Solution, bool)
 	stopSolutions func()
 	solutionErrFn func() error
 }
 
-func (s *shell) prompt() {
-	if s.state == queryState {
-		fmt.Print("?- ")
+func (s *shell) prompt() (string, error) {
+	switch s.state {
+	case queryState:
+		s.rl.SetPrompt("?- ")
+	case solutionsState:
+		s.rl.SetPrompt("")
 	}
+	return s.rl.Readline()
 }
 
 func (s *shell) readQuery(text string) error {
@@ -65,14 +70,22 @@ func (s *shell) abortSolutions() error {
 
 func main() {
 	fmt.Println("prol shell (Ctrl+D to exit)")
-	scanner := bufio.NewScanner(os.Stdin)
 	db := prol.Prelude()
-	shell := &shell{state: queryState, db: db}
-	shell.prompt()
-	for scanner.Scan() {
-		text := scanner.Text()
+	rl, err := readline.New("?- ")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rl.Close()
+	shell := &shell{state: queryState, db: db, rl: rl}
+	for {
+		text, err := rl.Readline()
+		if err != nil {
+			if err != io.EOF {
+				log.Println(err)
+			}
+			break
+		}
 		if text == "" {
-			shell.prompt()
 			continue
 		}
 		switch shell.state {
@@ -94,9 +107,5 @@ func main() {
 				fmt.Println("input error: expecting ';' or '.'")
 			}
 		}
-		shell.prompt()
-	}
-	if err := scanner.Err(); err != nil {
-		log.Println(err)
 	}
 }
