@@ -19,6 +19,7 @@ type Database struct {
 	index0     map[Indicator][]Rule
 	index1     map[Indicator][]*ruleIndex
 	Logger     *kif.Logger
+	dbg        *debugger
 }
 
 // f(1). f(s(a, b)). f(X). f(Y). f(p). f(Z).
@@ -128,8 +129,8 @@ func (db *Database) Assert(rule Rule) {
 	}
 }
 
-func (db *Database) PredicateExists(goal Struct) bool {
-	_, ok := db.index0[goal.Indicator()]
+func (db *Database) PredicateExists(ind Indicator) bool {
+	_, ok := db.index0[ind]
 	return ok
 }
 
@@ -166,8 +167,7 @@ func (db *Database) Matching(goal Struct) []Rule {
 func (db *Database) Solve(query Clause, opts ...any) (iter.Seq[Solution], func() error) {
 	env := make(map[Var]*Ref)
 	query = varToRef(query, env).(Clause)
-	s := &solver{db: db, env: env}
-	s.readOpts(opts)
+	s := newSolver(db, env, opts...)
 	var err error
 	seq := func(yield func(Solution) bool) {
 		s.yield = yield
@@ -257,6 +257,8 @@ type Solver interface {
 	Unify(t1, t2 Term) bool
 	Unwind() func() bool
 	Interpret(text string) error
+	PutBreakpoint(ind Indicator) bool
+	ClearBreakpoint(ind Indicator) bool
 }
 
 type Solution map[Var]Term
@@ -281,7 +283,8 @@ type solver struct {
 	limit        int
 }
 
-func (s *solver) readOpts(opts []any) {
+func newSolver(db *Database, env map[Var]*Ref, opts ...any) *solver {
+	s := &solver{db: db, env: env}
 	for i := 0; i < len(opts); {
 		switch opts[i] {
 		case "max_depth":
@@ -295,6 +298,7 @@ func (s *solver) readOpts(opts []any) {
 			i += 1
 		}
 	}
+	return s
 }
 
 func (s *solver) GetPredicate(ind Indicator) []Rule {
@@ -328,6 +332,22 @@ func (s *solver) Assert(rule Rule) {
 
 func (s *solver) Interpret(text string) error {
 	return s.db.Interpret(text)
+}
+
+func (s *solver) PutBreakpoint(ind Indicator) bool {
+	if s.db.dbg == nil {
+		s.db.dbg = newDebugger()
+	}
+	s.db.dbg.putBreakpoint(ind)
+	return true
+}
+
+func (s *solver) ClearBreakpoint(ind Indicator) bool {
+	if s.db.dbg == nil {
+		return false
+	}
+	s.db.dbg.clearBreakpoint(ind)
+	return true
 }
 
 // --- Search ---
@@ -388,19 +408,21 @@ func (s *solver) dfs(env *environment) error {
 		return nil
 	}
 	goal, env := env.next()
+	ind := goal.Indicator()
 	s.depth++
 	defer func() { s.depth-- }()
-	s.db.Logger.Log(kif.DEBUG, kif.KV{"msg", "search"}, kif.KV{"depth", s.depth}, kif.KV{"goal", goal.Indicator()})
+	s.db.Logger.Log(kif.DEBUG, kif.KV{"msg", "search"}, kif.KV{"depth", s.depth}, kif.KV{"goal", ind})
 	// Check call depth.
 	if s.maxDepth > 0 && s.depth > s.maxDepth {
 		return MaxDepthError{}
 	}
 	// Check if predicate exists.
-	if !s.db.PredicateExists(goal) {
-		return fmt.Errorf("predicate does not exist for goal: %v", goal.Indicator())
+	if !s.db.PredicateExists(ind) {
+		return fmt.Errorf("predicate does not exist for goal: %v", ind)
 	}
 	unwind := s.Unwind()
 	defer unwind()
+	s.db.dbg.checkBreakpoint(ind)
 	for _, rule := range s.db.Matching(goal) {
 		unwind()
 		body, ok, err := rule.Unify(s, goal)

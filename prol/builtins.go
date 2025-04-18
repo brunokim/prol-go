@@ -226,6 +226,24 @@ func consultBuiltin(s Solver, goal Struct) ([]Struct, bool, error) {
 	return isSuccess(true)
 }
 
+func putBreakpointBuiltin(s Solver, goal Struct) ([]Struct, bool, error) {
+	arg1 := Deref(goal.Args[0])
+	ind, err := CompileIndicator(arg1)
+	if err != nil {
+		return isError(fmt.Errorf("put_breakpoint/2: arg #1: %w", err))
+	}
+	return isSuccess(s.PutBreakpoint(ind))
+}
+
+func clearBreakpointBuiltin(s Solver, goal Struct) ([]Struct, bool, error) {
+	arg1 := Deref(goal.Args[0])
+	ind, err := CompileIndicator(arg1)
+	if err != nil {
+		return isError(fmt.Errorf("clear_breakpoint/2: arg #1: %w", err))
+	}
+	return isSuccess(s.ClearBreakpoint(ind))
+}
+
 var builtins = []Builtin{
 	Builtin{Indicator{"=", 2}, unifyBuiltin},
 	Builtin{Indicator{"neq", 2}, notEqualsBuiltin},
@@ -248,4 +266,6 @@ var builtins = []Builtin{
 	Builtin{Indicator{"print", 1}, printBuiltin},
 	Builtin{Indicator{"is", 2}, isBuiltin},
 	Builtin{Indicator{"consult", 1}, consultBuiltin},
+	Builtin{Indicator{"put_breakpoint", 1}, putBreakpointBuiltin},
+	Builtin{Indicator{"clear_breakpoint", 1}, clearBreakpointBuiltin},
 }
