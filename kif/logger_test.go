@@ -20,6 +20,7 @@ func (*buffer) Close() error {
 func TestLogfmtLogger(t *testing.T) {
 	var buf buffer
 	logger := kif.NewLogger(&buf)
+	logger.SetEncoder(kif.LogfmtEncoder)
 	logger.Debug(kif.KV{"message", "debug message"})
 	logger.Info(kif.KV{"message", "info message"})
 	logger.Info(kif.KV{"message", "x=2+2"})

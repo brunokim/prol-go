@@ -1,0 +1,18 @@
+consult('prol/lib/std.pl').
+;
+get_predicate(indicator(parse_term, 3), X).
+;
+append(X, Y, [1, 2]).
+;
+consult('prol/lib/std.pl').
+;
+append(X, Y, [1, 2]).
+;
+consult('prol/lib/std.pl').
+;
+append(X, Y, [1, 2]).
+;
+consult('prol/lib/std.pl').
+;
+append(X, Y, [1, 2]).
+;

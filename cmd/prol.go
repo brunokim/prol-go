@@ -33,7 +33,7 @@ func (s *shell) prompt() (string, error) {
 	case queryState:
 		s.rl.SetPrompt("?- ")
 	case solutionsState:
-		s.rl.SetPrompt("")
+		s.rl.SetPrompt(";) continue .) stop ")
 	}
 	return s.rl.Readline()
 }
@@ -56,10 +56,10 @@ func (s *shell) printSolution() error {
 		return s.abortSolutions()
 	}
 	if len(solution) == 0 {
-		fmt.Print("yes ")
+		fmt.Fprint(s.rl.Stdout(), "yes ")
 		return nil
 	}
-	fmt.Printf("%v ", solution)
+	fmt.Fprintf(s.rl.Stdout(), "%v ", solution)
 	return nil
 }
 
@@ -75,11 +75,15 @@ func main() {
 	db := prol.Prelude()
 	db.Logger = kif.NewStderrLogger()
 	db.Logger.LogLevel = kif.INFO
-	rl, err := readline.New("?- ")
+	rl, err := readline.NewEx(&readline.Config{
+		HistoryFile: ".prol-history",
+	})
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer rl.Close()
+	rl.CaptureExitSignal()
+	log.SetOutput(rl.Stdout())
 	shell := &shell{state: queryState, db: db, rl: rl}
 	for {
 		text, err := shell.prompt()

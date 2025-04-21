@@ -351,7 +351,7 @@ func TestPreludeExpressions(t *testing.T) {
 			}
 			defer db.Logger.Close()
 			db.Logger.DisableCaller = true
-            db.Logger.LogLevel = kif.DEBUG
+			db.Logger.LogLevel = kif.DEBUG
 			err = db.Interpret(test.content)
 			if err != nil {
 				t.Errorf("test interpret err: %v", err)
