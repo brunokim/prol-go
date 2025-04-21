@@ -86,7 +86,10 @@ func (db *Database) Assert(rule Rule) {
 		db.indicators = append(db.indicators, f)
 	}
 	db.index0[f] = append(db.index0[f], rule)
-	db.Logger.Debug(kif.KV{"msg", "assert rule"}, kif.KV{"rule", rule})
+	db.Logger.Info(kif.KV{"msg", "assert rule"}, kif.KV{"rule", rule})
+	if dcg, ok := rule.(DCG); ok {
+		db.Logger.Info(kif.KV{"msg", "DCG clause"}, kif.KV{"clause", dcg.clause})
+	}
 	// Populate index1 from first arg type.
 	var firstArg Term
 	switch c := rule.(type) {
@@ -231,7 +234,7 @@ func (db *Database) Interpret(text string, opts ...any) error {
 		}
 		chars = solution[v("Rest")]
 	}
-	log.Println("--- finished asserts ---")
+	db.Logger.Info(kif.KV{"msg", "finished asserts"})
 	solution, err := db.FirstSolution(Clause{
 		Struct{"query", nil},
 		Struct{"ws", []Term{chars, v("Rest")}}}, opts...)

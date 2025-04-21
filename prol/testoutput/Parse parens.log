@@ -21212,7 +21212,7 @@ level=DEBUG msg=backtrack depth=372
 level=DEBUG msg=backtrack depth=371
 level=DEBUG msg=search depth=371 goal='=/2'
 level=DEBUG msg=search depth=372 goal=assertz/1
-level=DEBUG msg='assert rule' rule='test_parse_expr(1, 1, f(g), +(1, 2)).'
+level=INFO msg='assert rule' rule='test_parse_expr(1, 1, f(g), +(1, 2)).'
 level=DEBUG msg=search depth=1 goal=query/0
 level=DEBUG msg=search depth=2 goal=ws/2
 level=DEBUG msg=search depth=3 goal='=/2'
@@ -21441,6 +21441,7 @@ level=DEBUG msg=backtrack depth=4
 level=DEBUG msg=backtrack depth=3
 level=DEBUG msg=backtrack depth=2
 level=DEBUG msg=backtrack depth=1
+level=INFO msg='finished asserts'
 level=DEBUG msg=search depth=1 goal=query/0
 level=DEBUG msg=search depth=2 goal=ws/2
 level=DEBUG msg=search depth=3 goal='=/2'

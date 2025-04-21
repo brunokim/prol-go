@@ -43,5 +43,3 @@ parse_directive(clause(struct(directive, []), Goals)) -->
     ".".
 
 parse_rule(Rule) --> parse_directive(Rule).
-
-:- print('directive parsed').

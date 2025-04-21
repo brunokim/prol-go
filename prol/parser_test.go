@@ -245,6 +245,17 @@ func TestPreludeDCG(t *testing.T) {
 				v("Rest"): a("[]"),
 			},
 		},
+		{
+			"Directive",
+			`:- put_predicate(
+                indicator(test_foo, 1),
+                [clause(struct(test_foo, [int(1)]), [])]).`,
+			clause(s("query"),
+				s("test_foo", v("X"))),
+			prol.Solution{
+				v("X"): int_(1),
+			},
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -340,6 +351,7 @@ func TestPreludeExpressions(t *testing.T) {
 			}
 			defer db.Logger.Close()
 			db.Logger.DisableCaller = true
+            db.Logger.LogLevel = kif.DEBUG
 			err = db.Interpret(test.content)
 			if err != nil {
 				t.Errorf("test interpret err: %v", err)

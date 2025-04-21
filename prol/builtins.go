@@ -2,7 +2,6 @@ package prol
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"strconv"
 )
@@ -184,10 +183,6 @@ func assertzBuiltin(s Solver, goal Struct) ([]Struct, bool, error) {
 	rule, err := CompileRule(arg1)
 	if err != nil {
 		return isError(fmt.Errorf("assertz/1: %w", err))
-	}
-	log.Println("asserting\n", rule)
-	if dcg, ok := rule.(DCG); ok {
-		log.Println(dcg.clause)
 	}
 	if rule.Indicator() == (Indicator{"directive", 0}) {
 		// Execute directive immediately.

@@ -6552,6 +6552,7 @@ level=DEBUG msg=backtrack depth=4
 level=DEBUG msg=backtrack depth=3
 level=DEBUG msg=backtrack depth=2
 level=DEBUG msg=backtrack depth=1
+level=INFO msg='finished asserts'
 level=DEBUG msg=search depth=1 goal=query/0
 level=DEBUG msg=search depth=2 goal=ws/2
 level=DEBUG msg=search depth=3 goal='=/2'

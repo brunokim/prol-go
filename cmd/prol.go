@@ -6,6 +6,7 @@ import (
 	"iter"
 	"log"
 
+	"github.com/brunokim/prol-go/kif"
 	"github.com/brunokim/prol-go/prol"
 	"github.com/chzyer/readline"
 )
@@ -18,9 +19,10 @@ const (
 )
 
 type shell struct {
-	state         shellState
-	db            *prol.Database
-	rl            *readline.Instance
+	state shellState
+	db    *prol.Database
+	rl    *readline.Instance
+	// State for solutionsState
 	nextSolution  func() (prol.Solution, bool)
 	stopSolutions func()
 	solutionErrFn func() error
@@ -71,6 +73,8 @@ func (s *shell) abortSolutions() error {
 func main() {
 	fmt.Println("prol shell (Ctrl+D to exit)")
 	db := prol.Prelude()
+	db.Logger = kif.NewStderrLogger()
+	db.Logger.LogLevel = kif.INFO
 	rl, err := readline.New("?- ")
 	if err != nil {
 		log.Fatal(err)
@@ -78,7 +82,7 @@ func main() {
 	defer rl.Close()
 	shell := &shell{state: queryState, db: db, rl: rl}
 	for {
-		text, err := rl.Readline()
+		text, err := shell.prompt()
 		if err != nil {
 			if err != io.EOF {
 				log.Println(err)

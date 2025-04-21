@@ -17802,7 +17802,7 @@ level=DEBUG msg=backtrack depth=374
 level=DEBUG msg=backtrack depth=373
 level=DEBUG msg=search depth=373 goal='=/2'
 level=DEBUG msg=search depth=374 goal=assertz/1
-level=DEBUG msg='assert rule' rule='test_parse_expr(1, a, X, f(g, h), "cd").'
+level=INFO msg='assert rule' rule='test_parse_expr(1, a, X, f(g, h), "cd").'
 level=DEBUG msg=search depth=1 goal=query/0
 level=DEBUG msg=search depth=2 goal=ws/2
 level=DEBUG msg=search depth=3 goal='=/2'
@@ -18031,6 +18031,7 @@ level=DEBUG msg=backtrack depth=4
 level=DEBUG msg=backtrack depth=3
 level=DEBUG msg=backtrack depth=2
 level=DEBUG msg=backtrack depth=1
+level=INFO msg='finished asserts'
 level=DEBUG msg=search depth=1 goal=query/0
 level=DEBUG msg=search depth=2 goal=ws/2
 level=DEBUG msg=search depth=3 goal='=/2'

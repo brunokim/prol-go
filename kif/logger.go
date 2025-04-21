@@ -69,7 +69,7 @@ func NewLogger(out io.WriteCloser) *Logger {
 		out:         out,
 		shouldClose: false,
 		encoder:     logfmtEncoder{},
-		LogLevel:    DEBUG,
+		LogLevel:    WARN,
 	}
 }
 
