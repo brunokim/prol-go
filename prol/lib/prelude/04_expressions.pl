@@ -180,7 +180,8 @@ parse_atomic_term(Term) -->
 % parse_expr//1 parses an expression with operators.
 parse_expr(Term) -->
   parse_leaf(Leaf),
-  parse_infix(Leaf, Term).
+  parse_infix(Leaf, Expr),
+  { expr_to_term(Expr, Term) }.
 
 % parse_leaf//1 parses an expression like 'prefix_op* atomic_term suffix_op*'
 parse_leaf(Term) -->
@@ -233,6 +234,10 @@ parse_infix(Term, Term) --> [].
 % For example, given Left = (1 + 2), Op = +, Arg = 3, then Term = ((1 + 2) + 3)
 % Likewise, given Left = (1 + 2), Op = *, Arg = 3, then Term = (1 + (2 * 3))
 insert_right(Expr, Op1, Arg, Term) :-
+  % Base case: atomic expression.
+  neq(Expr, expr(_, _, _)),
+  =(Term, expr(Expr, Op1, Arg)).
+insert_right(Expr, Op1, Arg, Term) :-
   % Inserting operator with higher precedence than left tree.
   =(Expr, expr(Left, Op2, Right)),
   check_precedence(Op1, Op2, left),
@@ -256,6 +261,24 @@ check_precedence(op(Prec1, Type1, _), op(Prec2, _, _), Pos) :-
   >=(Prec1, Prec2).
 check_precedence(op(Prec1, _, _), op(Prec2, _, _), _) :-
   >(Prec1, Prec2).
+
+% expr_to_term(Expr, Term) converts an expression (with op metadata) into a term.
+expr_to_term(expr(_, op(_, Type, Op), RightExpr), Term) :-
+  op_type_position(Type, prefix),
+  expr_to_term(RightExpr, Right),
+  =(Term, struct(Op, [Right])).
+expr_to_term(expr(LeftExpr, op(_, Type, Op), _), Term) :-
+  op_type_position(Type, suffix),
+  expr_to_term(LeftExpr, Left),
+  =(Term, struct(Op, [Left])).
+expr_to_term(expr(LeftExpr, op(_, Type, Op), RightExpr), Term) :-
+  op_type_position(Type, infix),
+  expr_to_term(LeftExpr, Left),
+  expr_to_term(RightExpr, Right),
+  =(Term, struct(Op, [Left, Right])).
+expr_to_term(Expr, Term) :-
+  neq(Expr, expr(_, _, _)),
+  =(Term, Expr).
 
 % Makes parse_term an alias to parse_expr.
 :- put_predicate(indicator(parse_term, 3), [
