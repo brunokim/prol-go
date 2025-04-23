@@ -353,24 +353,42 @@ level=DEBUG msg=backtrack depth=69
 level=DEBUG msg=backtrack depth=68
 level=DEBUG msg=backtrack depth=67
 level=DEBUG msg=search depth=67 goal='=/2'
-level=DEBUG msg=search depth=68 goal='=/2'
-level=DEBUG msg=search depth=69 goal='=/2'
-level=DEBUG msg=search depth=70 goal=ws/2
-level=DEBUG msg=search depth=71 goal='=/2'
-level=DEBUG msg=search depth=72 goal=space/1
-level=DEBUG msg=backtrack depth=72
-level=DEBUG msg=backtrack depth=71
-level=DEBUG msg=search depth=71 goal=line_comment/2
+level=DEBUG msg=search depth=68 goal=expr_to_term/2
+level=DEBUG msg=search depth=69 goal=op_type_position/2
+level=DEBUG msg=search depth=70 goal=expr_to_term/2
+level=DEBUG msg=search depth=71 goal=neq/2
 level=DEBUG msg=search depth=72 goal='=/2'
+level=DEBUG msg=search depth=73 goal='=/2'
+level=DEBUG msg=search depth=74 goal='=/2'
+level=DEBUG msg=search depth=75 goal='=/2'
+level=DEBUG msg=search depth=76 goal=ws/2
+level=DEBUG msg=search depth=77 goal='=/2'
+level=DEBUG msg=search depth=78 goal=space/1
+level=DEBUG msg=backtrack depth=78
+level=DEBUG msg=backtrack depth=77
+level=DEBUG msg=search depth=77 goal=line_comment/2
+level=DEBUG msg=search depth=78 goal='=/2'
+level=DEBUG msg=backtrack depth=78
+level=DEBUG msg=backtrack depth=77
+level=DEBUG msg=search depth=77 goal=c_comment/2
+level=DEBUG msg=search depth=78 goal='=/2'
+level=DEBUG msg=backtrack depth=78
+level=DEBUG msg=backtrack depth=77
+level=DEBUG msg=search depth=77 goal='=/2'
+level=DEBUG msg=backtrack depth=77
+level=DEBUG msg=backtrack depth=76
+level=DEBUG msg=backtrack depth=75
+level=DEBUG msg=backtrack depth=74
+level=DEBUG msg=backtrack depth=73
 level=DEBUG msg=backtrack depth=72
-level=DEBUG msg=backtrack depth=71
-level=DEBUG msg=search depth=71 goal=c_comment/2
-level=DEBUG msg=search depth=72 goal='=/2'
-level=DEBUG msg=backtrack depth=72
-level=DEBUG msg=backtrack depth=71
-level=DEBUG msg=search depth=71 goal='=/2'
 level=DEBUG msg=backtrack depth=71
 level=DEBUG msg=backtrack depth=70
+level=DEBUG msg=backtrack depth=69
+level=DEBUG msg=search depth=69 goal=op_type_position/2
+level=DEBUG msg=backtrack depth=69
+level=DEBUG msg=search depth=69 goal=op_type_position/2
+level=DEBUG msg=backtrack depth=69
+level=DEBUG msg=search depth=69 goal=neq/2
 level=DEBUG msg=backtrack depth=69
 level=DEBUG msg=backtrack depth=68
 level=DEBUG msg=backtrack depth=67
@@ -928,14 +946,30 @@ level=DEBUG msg=backtrack depth=48
 level=DEBUG msg=backtrack depth=47
 level=DEBUG msg=backtrack depth=46
 level=DEBUG msg=search depth=46 goal='=/2'
-level=DEBUG msg=search depth=47 goal='=/2'
-level=DEBUG msg=search depth=48 goal='=/2'
-level=DEBUG msg=search depth=49 goal=ws/2
+level=DEBUG msg=search depth=47 goal=expr_to_term/2
+level=DEBUG msg=search depth=48 goal=neq/2
+level=DEBUG msg=search depth=49 goal='=/2'
 level=DEBUG msg=search depth=50 goal='=/2'
-level=DEBUG msg=search depth=51 goal=space/1
+level=DEBUG msg=search depth=51 goal='=/2'
 level=DEBUG msg=search depth=52 goal=ws/2
 level=DEBUG msg=search depth=53 goal='=/2'
 level=DEBUG msg=search depth=54 goal=space/1
+level=DEBUG msg=search depth=55 goal=ws/2
+level=DEBUG msg=search depth=56 goal='=/2'
+level=DEBUG msg=search depth=57 goal=space/1
+level=DEBUG msg=backtrack depth=57
+level=DEBUG msg=backtrack depth=56
+level=DEBUG msg=search depth=56 goal=line_comment/2
+level=DEBUG msg=search depth=57 goal='=/2'
+level=DEBUG msg=backtrack depth=57
+level=DEBUG msg=backtrack depth=56
+level=DEBUG msg=search depth=56 goal=c_comment/2
+level=DEBUG msg=search depth=57 goal='=/2'
+level=DEBUG msg=backtrack depth=57
+level=DEBUG msg=backtrack depth=56
+level=DEBUG msg=search depth=56 goal='=/2'
+level=DEBUG msg=backtrack depth=56
+level=DEBUG msg=backtrack depth=55
 level=DEBUG msg=backtrack depth=54
 level=DEBUG msg=backtrack depth=53
 level=DEBUG msg=search depth=53 goal=line_comment/2
@@ -950,16 +984,6 @@ level=DEBUG msg=search depth=53 goal='=/2'
 level=DEBUG msg=backtrack depth=53
 level=DEBUG msg=backtrack depth=52
 level=DEBUG msg=backtrack depth=51
-level=DEBUG msg=backtrack depth=50
-level=DEBUG msg=search depth=50 goal=line_comment/2
-level=DEBUG msg=search depth=51 goal='=/2'
-level=DEBUG msg=backtrack depth=51
-level=DEBUG msg=backtrack depth=50
-level=DEBUG msg=search depth=50 goal=c_comment/2
-level=DEBUG msg=search depth=51 goal='=/2'
-level=DEBUG msg=backtrack depth=51
-level=DEBUG msg=backtrack depth=50
-level=DEBUG msg=search depth=50 goal='=/2'
 level=DEBUG msg=backtrack depth=50
 level=DEBUG msg=backtrack depth=49
 level=DEBUG msg=backtrack depth=48
@@ -1321,38 +1345,56 @@ level=DEBUG msg=backtrack depth=69
 level=DEBUG msg=backtrack depth=68
 level=DEBUG msg=backtrack depth=67
 level=DEBUG msg=search depth=67 goal='=/2'
-level=DEBUG msg=search depth=68 goal='=/2'
-level=DEBUG msg=search depth=69 goal='=/2'
-level=DEBUG msg=search depth=70 goal=ws/2
-level=DEBUG msg=search depth=71 goal='=/2'
-level=DEBUG msg=search depth=72 goal=space/1
-level=DEBUG msg=backtrack depth=72
-level=DEBUG msg=backtrack depth=71
-level=DEBUG msg=search depth=71 goal=line_comment/2
+level=DEBUG msg=search depth=68 goal=expr_to_term/2
+level=DEBUG msg=search depth=69 goal=op_type_position/2
+level=DEBUG msg=search depth=70 goal=expr_to_term/2
+level=DEBUG msg=search depth=71 goal=neq/2
 level=DEBUG msg=search depth=72 goal='=/2'
-level=DEBUG msg=backtrack depth=72
-level=DEBUG msg=backtrack depth=71
-level=DEBUG msg=search depth=71 goal=c_comment/2
-level=DEBUG msg=search depth=72 goal='=/2'
-level=DEBUG msg=backtrack depth=72
-level=DEBUG msg=backtrack depth=71
-level=DEBUG msg=search depth=71 goal='=/2'
-level=DEBUG msg=search depth=72 goal=ws/2
 level=DEBUG msg=search depth=73 goal='=/2'
-level=DEBUG msg=backtrack depth=73
-level=DEBUG msg=search depth=73 goal=line_comment/2
 level=DEBUG msg=search depth=74 goal='=/2'
+level=DEBUG msg=search depth=75 goal='=/2'
+level=DEBUG msg=search depth=76 goal=ws/2
+level=DEBUG msg=search depth=77 goal='=/2'
+level=DEBUG msg=search depth=78 goal=space/1
+level=DEBUG msg=backtrack depth=78
+level=DEBUG msg=backtrack depth=77
+level=DEBUG msg=search depth=77 goal=line_comment/2
+level=DEBUG msg=search depth=78 goal='=/2'
+level=DEBUG msg=backtrack depth=78
+level=DEBUG msg=backtrack depth=77
+level=DEBUG msg=search depth=77 goal=c_comment/2
+level=DEBUG msg=search depth=78 goal='=/2'
+level=DEBUG msg=backtrack depth=78
+level=DEBUG msg=backtrack depth=77
+level=DEBUG msg=search depth=77 goal='=/2'
+level=DEBUG msg=search depth=78 goal=ws/2
+level=DEBUG msg=search depth=79 goal='=/2'
+level=DEBUG msg=backtrack depth=79
+level=DEBUG msg=search depth=79 goal=line_comment/2
+level=DEBUG msg=search depth=80 goal='=/2'
+level=DEBUG msg=backtrack depth=80
+level=DEBUG msg=backtrack depth=79
+level=DEBUG msg=search depth=79 goal=c_comment/2
+level=DEBUG msg=search depth=80 goal='=/2'
+level=DEBUG msg=backtrack depth=80
+level=DEBUG msg=backtrack depth=79
+level=DEBUG msg=search depth=79 goal='=/2'
+level=DEBUG msg=backtrack depth=79
+level=DEBUG msg=backtrack depth=78
+level=DEBUG msg=backtrack depth=77
+level=DEBUG msg=backtrack depth=76
+level=DEBUG msg=backtrack depth=75
 level=DEBUG msg=backtrack depth=74
-level=DEBUG msg=backtrack depth=73
-level=DEBUG msg=search depth=73 goal=c_comment/2
-level=DEBUG msg=search depth=74 goal='=/2'
-level=DEBUG msg=backtrack depth=74
-level=DEBUG msg=backtrack depth=73
-level=DEBUG msg=search depth=73 goal='=/2'
 level=DEBUG msg=backtrack depth=73
 level=DEBUG msg=backtrack depth=72
 level=DEBUG msg=backtrack depth=71
 level=DEBUG msg=backtrack depth=70
+level=DEBUG msg=backtrack depth=69
+level=DEBUG msg=search depth=69 goal=op_type_position/2
+level=DEBUG msg=backtrack depth=69
+level=DEBUG msg=search depth=69 goal=op_type_position/2
+level=DEBUG msg=backtrack depth=69
+level=DEBUG msg=search depth=69 goal=neq/2
 level=DEBUG msg=backtrack depth=69
 level=DEBUG msg=backtrack depth=68
 level=DEBUG msg=backtrack depth=67
@@ -1910,14 +1952,30 @@ level=DEBUG msg=backtrack depth=48
 level=DEBUG msg=backtrack depth=47
 level=DEBUG msg=backtrack depth=46
 level=DEBUG msg=search depth=46 goal='=/2'
-level=DEBUG msg=search depth=47 goal='=/2'
-level=DEBUG msg=search depth=48 goal='=/2'
-level=DEBUG msg=search depth=49 goal=ws/2
+level=DEBUG msg=search depth=47 goal=expr_to_term/2
+level=DEBUG msg=search depth=48 goal=neq/2
+level=DEBUG msg=search depth=49 goal='=/2'
 level=DEBUG msg=search depth=50 goal='=/2'
-level=DEBUG msg=search depth=51 goal=space/1
+level=DEBUG msg=search depth=51 goal='=/2'
 level=DEBUG msg=search depth=52 goal=ws/2
 level=DEBUG msg=search depth=53 goal='=/2'
 level=DEBUG msg=search depth=54 goal=space/1
+level=DEBUG msg=search depth=55 goal=ws/2
+level=DEBUG msg=search depth=56 goal='=/2'
+level=DEBUG msg=search depth=57 goal=space/1
+level=DEBUG msg=backtrack depth=57
+level=DEBUG msg=backtrack depth=56
+level=DEBUG msg=search depth=56 goal=line_comment/2
+level=DEBUG msg=search depth=57 goal='=/2'
+level=DEBUG msg=backtrack depth=57
+level=DEBUG msg=backtrack depth=56
+level=DEBUG msg=search depth=56 goal=c_comment/2
+level=DEBUG msg=search depth=57 goal='=/2'
+level=DEBUG msg=backtrack depth=57
+level=DEBUG msg=backtrack depth=56
+level=DEBUG msg=search depth=56 goal='=/2'
+level=DEBUG msg=backtrack depth=56
+level=DEBUG msg=backtrack depth=55
 level=DEBUG msg=backtrack depth=54
 level=DEBUG msg=backtrack depth=53
 level=DEBUG msg=search depth=53 goal=line_comment/2
@@ -1932,16 +1990,6 @@ level=DEBUG msg=search depth=53 goal='=/2'
 level=DEBUG msg=backtrack depth=53
 level=DEBUG msg=backtrack depth=52
 level=DEBUG msg=backtrack depth=51
-level=DEBUG msg=backtrack depth=50
-level=DEBUG msg=search depth=50 goal=line_comment/2
-level=DEBUG msg=search depth=51 goal='=/2'
-level=DEBUG msg=backtrack depth=51
-level=DEBUG msg=backtrack depth=50
-level=DEBUG msg=search depth=50 goal=c_comment/2
-level=DEBUG msg=search depth=51 goal='=/2'
-level=DEBUG msg=backtrack depth=51
-level=DEBUG msg=backtrack depth=50
-level=DEBUG msg=search depth=50 goal='=/2'
 level=DEBUG msg=backtrack depth=50
 level=DEBUG msg=backtrack depth=49
 level=DEBUG msg=backtrack depth=48
@@ -2529,24 +2577,42 @@ level=DEBUG msg=backtrack depth=69
 level=DEBUG msg=backtrack depth=68
 level=DEBUG msg=backtrack depth=67
 level=DEBUG msg=search depth=67 goal='=/2'
-level=DEBUG msg=search depth=68 goal='=/2'
-level=DEBUG msg=search depth=69 goal='=/2'
-level=DEBUG msg=search depth=70 goal=ws/2
-level=DEBUG msg=search depth=71 goal='=/2'
-level=DEBUG msg=search depth=72 goal=space/1
-level=DEBUG msg=backtrack depth=72
-level=DEBUG msg=backtrack depth=71
-level=DEBUG msg=search depth=71 goal=line_comment/2
+level=DEBUG msg=search depth=68 goal=expr_to_term/2
+level=DEBUG msg=search depth=69 goal=op_type_position/2
+level=DEBUG msg=search depth=70 goal=expr_to_term/2
+level=DEBUG msg=search depth=71 goal=neq/2
 level=DEBUG msg=search depth=72 goal='=/2'
+level=DEBUG msg=search depth=73 goal='=/2'
+level=DEBUG msg=search depth=74 goal='=/2'
+level=DEBUG msg=search depth=75 goal='=/2'
+level=DEBUG msg=search depth=76 goal=ws/2
+level=DEBUG msg=search depth=77 goal='=/2'
+level=DEBUG msg=search depth=78 goal=space/1
+level=DEBUG msg=backtrack depth=78
+level=DEBUG msg=backtrack depth=77
+level=DEBUG msg=search depth=77 goal=line_comment/2
+level=DEBUG msg=search depth=78 goal='=/2'
+level=DEBUG msg=backtrack depth=78
+level=DEBUG msg=backtrack depth=77
+level=DEBUG msg=search depth=77 goal=c_comment/2
+level=DEBUG msg=search depth=78 goal='=/2'
+level=DEBUG msg=backtrack depth=78
+level=DEBUG msg=backtrack depth=77
+level=DEBUG msg=search depth=77 goal='=/2'
+level=DEBUG msg=backtrack depth=77
+level=DEBUG msg=backtrack depth=76
+level=DEBUG msg=backtrack depth=75
+level=DEBUG msg=backtrack depth=74
+level=DEBUG msg=backtrack depth=73
 level=DEBUG msg=backtrack depth=72
-level=DEBUG msg=backtrack depth=71
-level=DEBUG msg=search depth=71 goal=c_comment/2
-level=DEBUG msg=search depth=72 goal='=/2'
-level=DEBUG msg=backtrack depth=72
-level=DEBUG msg=backtrack depth=71
-level=DEBUG msg=search depth=71 goal='=/2'
 level=DEBUG msg=backtrack depth=71
 level=DEBUG msg=backtrack depth=70
+level=DEBUG msg=backtrack depth=69
+level=DEBUG msg=search depth=69 goal=op_type_position/2
+level=DEBUG msg=backtrack depth=69
+level=DEBUG msg=search depth=69 goal=op_type_position/2
+level=DEBUG msg=backtrack depth=69
+level=DEBUG msg=search depth=69 goal=neq/2
 level=DEBUG msg=backtrack depth=69
 level=DEBUG msg=backtrack depth=68
 level=DEBUG msg=backtrack depth=67
@@ -3104,14 +3170,30 @@ level=DEBUG msg=backtrack depth=48
 level=DEBUG msg=backtrack depth=47
 level=DEBUG msg=backtrack depth=46
 level=DEBUG msg=search depth=46 goal='=/2'
-level=DEBUG msg=search depth=47 goal='=/2'
-level=DEBUG msg=search depth=48 goal='=/2'
-level=DEBUG msg=search depth=49 goal=ws/2
+level=DEBUG msg=search depth=47 goal=expr_to_term/2
+level=DEBUG msg=search depth=48 goal=neq/2
+level=DEBUG msg=search depth=49 goal='=/2'
 level=DEBUG msg=search depth=50 goal='=/2'
-level=DEBUG msg=search depth=51 goal=space/1
+level=DEBUG msg=search depth=51 goal='=/2'
 level=DEBUG msg=search depth=52 goal=ws/2
 level=DEBUG msg=search depth=53 goal='=/2'
 level=DEBUG msg=search depth=54 goal=space/1
+level=DEBUG msg=search depth=55 goal=ws/2
+level=DEBUG msg=search depth=56 goal='=/2'
+level=DEBUG msg=search depth=57 goal=space/1
+level=DEBUG msg=backtrack depth=57
+level=DEBUG msg=backtrack depth=56
+level=DEBUG msg=search depth=56 goal=line_comment/2
+level=DEBUG msg=search depth=57 goal='=/2'
+level=DEBUG msg=backtrack depth=57
+level=DEBUG msg=backtrack depth=56
+level=DEBUG msg=search depth=56 goal=c_comment/2
+level=DEBUG msg=search depth=57 goal='=/2'
+level=DEBUG msg=backtrack depth=57
+level=DEBUG msg=backtrack depth=56
+level=DEBUG msg=search depth=56 goal='=/2'
+level=DEBUG msg=backtrack depth=56
+level=DEBUG msg=backtrack depth=55
 level=DEBUG msg=backtrack depth=54
 level=DEBUG msg=backtrack depth=53
 level=DEBUG msg=search depth=53 goal=line_comment/2
@@ -3126,16 +3208,6 @@ level=DEBUG msg=search depth=53 goal='=/2'
 level=DEBUG msg=backtrack depth=53
 level=DEBUG msg=backtrack depth=52
 level=DEBUG msg=backtrack depth=51
-level=DEBUG msg=backtrack depth=50
-level=DEBUG msg=search depth=50 goal=line_comment/2
-level=DEBUG msg=search depth=51 goal='=/2'
-level=DEBUG msg=backtrack depth=51
-level=DEBUG msg=backtrack depth=50
-level=DEBUG msg=search depth=50 goal=c_comment/2
-level=DEBUG msg=search depth=51 goal='=/2'
-level=DEBUG msg=backtrack depth=51
-level=DEBUG msg=backtrack depth=50
-level=DEBUG msg=search depth=50 goal='=/2'
 level=DEBUG msg=backtrack depth=50
 level=DEBUG msg=backtrack depth=49
 level=DEBUG msg=backtrack depth=48
@@ -3497,38 +3569,56 @@ level=DEBUG msg=backtrack depth=69
 level=DEBUG msg=backtrack depth=68
 level=DEBUG msg=backtrack depth=67
 level=DEBUG msg=search depth=67 goal='=/2'
-level=DEBUG msg=search depth=68 goal='=/2'
-level=DEBUG msg=search depth=69 goal='=/2'
-level=DEBUG msg=search depth=70 goal=ws/2
-level=DEBUG msg=search depth=71 goal='=/2'
-level=DEBUG msg=search depth=72 goal=space/1
-level=DEBUG msg=backtrack depth=72
-level=DEBUG msg=backtrack depth=71
-level=DEBUG msg=search depth=71 goal=line_comment/2
+level=DEBUG msg=search depth=68 goal=expr_to_term/2
+level=DEBUG msg=search depth=69 goal=op_type_position/2
+level=DEBUG msg=search depth=70 goal=expr_to_term/2
+level=DEBUG msg=search depth=71 goal=neq/2
 level=DEBUG msg=search depth=72 goal='=/2'
-level=DEBUG msg=backtrack depth=72
-level=DEBUG msg=backtrack depth=71
-level=DEBUG msg=search depth=71 goal=c_comment/2
-level=DEBUG msg=search depth=72 goal='=/2'
-level=DEBUG msg=backtrack depth=72
-level=DEBUG msg=backtrack depth=71
-level=DEBUG msg=search depth=71 goal='=/2'
-level=DEBUG msg=search depth=72 goal=ws/2
 level=DEBUG msg=search depth=73 goal='=/2'
-level=DEBUG msg=backtrack depth=73
-level=DEBUG msg=search depth=73 goal=line_comment/2
 level=DEBUG msg=search depth=74 goal='=/2'
+level=DEBUG msg=search depth=75 goal='=/2'
+level=DEBUG msg=search depth=76 goal=ws/2
+level=DEBUG msg=search depth=77 goal='=/2'
+level=DEBUG msg=search depth=78 goal=space/1
+level=DEBUG msg=backtrack depth=78
+level=DEBUG msg=backtrack depth=77
+level=DEBUG msg=search depth=77 goal=line_comment/2
+level=DEBUG msg=search depth=78 goal='=/2'
+level=DEBUG msg=backtrack depth=78
+level=DEBUG msg=backtrack depth=77
+level=DEBUG msg=search depth=77 goal=c_comment/2
+level=DEBUG msg=search depth=78 goal='=/2'
+level=DEBUG msg=backtrack depth=78
+level=DEBUG msg=backtrack depth=77
+level=DEBUG msg=search depth=77 goal='=/2'
+level=DEBUG msg=search depth=78 goal=ws/2
+level=DEBUG msg=search depth=79 goal='=/2'
+level=DEBUG msg=backtrack depth=79
+level=DEBUG msg=search depth=79 goal=line_comment/2
+level=DEBUG msg=search depth=80 goal='=/2'
+level=DEBUG msg=backtrack depth=80
+level=DEBUG msg=backtrack depth=79
+level=DEBUG msg=search depth=79 goal=c_comment/2
+level=DEBUG msg=search depth=80 goal='=/2'
+level=DEBUG msg=backtrack depth=80
+level=DEBUG msg=backtrack depth=79
+level=DEBUG msg=search depth=79 goal='=/2'
+level=DEBUG msg=backtrack depth=79
+level=DEBUG msg=backtrack depth=78
+level=DEBUG msg=backtrack depth=77
+level=DEBUG msg=backtrack depth=76
+level=DEBUG msg=backtrack depth=75
 level=DEBUG msg=backtrack depth=74
-level=DEBUG msg=backtrack depth=73
-level=DEBUG msg=search depth=73 goal=c_comment/2
-level=DEBUG msg=search depth=74 goal='=/2'
-level=DEBUG msg=backtrack depth=74
-level=DEBUG msg=backtrack depth=73
-level=DEBUG msg=search depth=73 goal='=/2'
 level=DEBUG msg=backtrack depth=73
 level=DEBUG msg=backtrack depth=72
 level=DEBUG msg=backtrack depth=71
 level=DEBUG msg=backtrack depth=70
+level=DEBUG msg=backtrack depth=69
+level=DEBUG msg=search depth=69 goal=op_type_position/2
+level=DEBUG msg=backtrack depth=69
+level=DEBUG msg=search depth=69 goal=op_type_position/2
+level=DEBUG msg=backtrack depth=69
+level=DEBUG msg=search depth=69 goal=neq/2
 level=DEBUG msg=backtrack depth=69
 level=DEBUG msg=backtrack depth=68
 level=DEBUG msg=backtrack depth=67
@@ -4086,14 +4176,30 @@ level=DEBUG msg=backtrack depth=48
 level=DEBUG msg=backtrack depth=47
 level=DEBUG msg=backtrack depth=46
 level=DEBUG msg=search depth=46 goal='=/2'
-level=DEBUG msg=search depth=47 goal='=/2'
-level=DEBUG msg=search depth=48 goal='=/2'
-level=DEBUG msg=search depth=49 goal=ws/2
+level=DEBUG msg=search depth=47 goal=expr_to_term/2
+level=DEBUG msg=search depth=48 goal=neq/2
+level=DEBUG msg=search depth=49 goal='=/2'
 level=DEBUG msg=search depth=50 goal='=/2'
-level=DEBUG msg=search depth=51 goal=space/1
+level=DEBUG msg=search depth=51 goal='=/2'
 level=DEBUG msg=search depth=52 goal=ws/2
 level=DEBUG msg=search depth=53 goal='=/2'
 level=DEBUG msg=search depth=54 goal=space/1
+level=DEBUG msg=search depth=55 goal=ws/2
+level=DEBUG msg=search depth=56 goal='=/2'
+level=DEBUG msg=search depth=57 goal=space/1
+level=DEBUG msg=backtrack depth=57
+level=DEBUG msg=backtrack depth=56
+level=DEBUG msg=search depth=56 goal=line_comment/2
+level=DEBUG msg=search depth=57 goal='=/2'
+level=DEBUG msg=backtrack depth=57
+level=DEBUG msg=backtrack depth=56
+level=DEBUG msg=search depth=56 goal=c_comment/2
+level=DEBUG msg=search depth=57 goal='=/2'
+level=DEBUG msg=backtrack depth=57
+level=DEBUG msg=backtrack depth=56
+level=DEBUG msg=search depth=56 goal='=/2'
+level=DEBUG msg=backtrack depth=56
+level=DEBUG msg=backtrack depth=55
 level=DEBUG msg=backtrack depth=54
 level=DEBUG msg=backtrack depth=53
 level=DEBUG msg=search depth=53 goal=line_comment/2
@@ -4108,16 +4214,6 @@ level=DEBUG msg=search depth=53 goal='=/2'
 level=DEBUG msg=backtrack depth=53
 level=DEBUG msg=backtrack depth=52
 level=DEBUG msg=backtrack depth=51
-level=DEBUG msg=backtrack depth=50
-level=DEBUG msg=search depth=50 goal=line_comment/2
-level=DEBUG msg=search depth=51 goal='=/2'
-level=DEBUG msg=backtrack depth=51
-level=DEBUG msg=backtrack depth=50
-level=DEBUG msg=search depth=50 goal=c_comment/2
-level=DEBUG msg=search depth=51 goal='=/2'
-level=DEBUG msg=backtrack depth=51
-level=DEBUG msg=backtrack depth=50
-level=DEBUG msg=search depth=50 goal='=/2'
 level=DEBUG msg=backtrack depth=50
 level=DEBUG msg=backtrack depth=49
 level=DEBUG msg=backtrack depth=48
@@ -4707,24 +4803,42 @@ level=DEBUG msg=backtrack depth=69
 level=DEBUG msg=backtrack depth=68
 level=DEBUG msg=backtrack depth=67
 level=DEBUG msg=search depth=67 goal='=/2'
-level=DEBUG msg=search depth=68 goal='=/2'
-level=DEBUG msg=search depth=69 goal='=/2'
-level=DEBUG msg=search depth=70 goal=ws/2
-level=DEBUG msg=search depth=71 goal='=/2'
-level=DEBUG msg=search depth=72 goal=space/1
-level=DEBUG msg=backtrack depth=72
-level=DEBUG msg=backtrack depth=71
-level=DEBUG msg=search depth=71 goal=line_comment/2
+level=DEBUG msg=search depth=68 goal=expr_to_term/2
+level=DEBUG msg=search depth=69 goal=op_type_position/2
+level=DEBUG msg=search depth=70 goal=expr_to_term/2
+level=DEBUG msg=search depth=71 goal=neq/2
 level=DEBUG msg=search depth=72 goal='=/2'
+level=DEBUG msg=search depth=73 goal='=/2'
+level=DEBUG msg=search depth=74 goal='=/2'
+level=DEBUG msg=search depth=75 goal='=/2'
+level=DEBUG msg=search depth=76 goal=ws/2
+level=DEBUG msg=search depth=77 goal='=/2'
+level=DEBUG msg=search depth=78 goal=space/1
+level=DEBUG msg=backtrack depth=78
+level=DEBUG msg=backtrack depth=77
+level=DEBUG msg=search depth=77 goal=line_comment/2
+level=DEBUG msg=search depth=78 goal='=/2'
+level=DEBUG msg=backtrack depth=78
+level=DEBUG msg=backtrack depth=77
+level=DEBUG msg=search depth=77 goal=c_comment/2
+level=DEBUG msg=search depth=78 goal='=/2'
+level=DEBUG msg=backtrack depth=78
+level=DEBUG msg=backtrack depth=77
+level=DEBUG msg=search depth=77 goal='=/2'
+level=DEBUG msg=backtrack depth=77
+level=DEBUG msg=backtrack depth=76
+level=DEBUG msg=backtrack depth=75
+level=DEBUG msg=backtrack depth=74
+level=DEBUG msg=backtrack depth=73
 level=DEBUG msg=backtrack depth=72
-level=DEBUG msg=backtrack depth=71
-level=DEBUG msg=search depth=71 goal=c_comment/2
-level=DEBUG msg=search depth=72 goal='=/2'
-level=DEBUG msg=backtrack depth=72
-level=DEBUG msg=backtrack depth=71
-level=DEBUG msg=search depth=71 goal='=/2'
 level=DEBUG msg=backtrack depth=71
 level=DEBUG msg=backtrack depth=70
+level=DEBUG msg=backtrack depth=69
+level=DEBUG msg=search depth=69 goal=op_type_position/2
+level=DEBUG msg=backtrack depth=69
+level=DEBUG msg=search depth=69 goal=op_type_position/2
+level=DEBUG msg=backtrack depth=69
+level=DEBUG msg=search depth=69 goal=neq/2
 level=DEBUG msg=backtrack depth=69
 level=DEBUG msg=backtrack depth=68
 level=DEBUG msg=backtrack depth=67
@@ -5282,14 +5396,30 @@ level=DEBUG msg=backtrack depth=48
 level=DEBUG msg=backtrack depth=47
 level=DEBUG msg=backtrack depth=46
 level=DEBUG msg=search depth=46 goal='=/2'
-level=DEBUG msg=search depth=47 goal='=/2'
-level=DEBUG msg=search depth=48 goal='=/2'
-level=DEBUG msg=search depth=49 goal=ws/2
+level=DEBUG msg=search depth=47 goal=expr_to_term/2
+level=DEBUG msg=search depth=48 goal=neq/2
+level=DEBUG msg=search depth=49 goal='=/2'
 level=DEBUG msg=search depth=50 goal='=/2'
-level=DEBUG msg=search depth=51 goal=space/1
+level=DEBUG msg=search depth=51 goal='=/2'
 level=DEBUG msg=search depth=52 goal=ws/2
 level=DEBUG msg=search depth=53 goal='=/2'
 level=DEBUG msg=search depth=54 goal=space/1
+level=DEBUG msg=search depth=55 goal=ws/2
+level=DEBUG msg=search depth=56 goal='=/2'
+level=DEBUG msg=search depth=57 goal=space/1
+level=DEBUG msg=backtrack depth=57
+level=DEBUG msg=backtrack depth=56
+level=DEBUG msg=search depth=56 goal=line_comment/2
+level=DEBUG msg=search depth=57 goal='=/2'
+level=DEBUG msg=backtrack depth=57
+level=DEBUG msg=backtrack depth=56
+level=DEBUG msg=search depth=56 goal=c_comment/2
+level=DEBUG msg=search depth=57 goal='=/2'
+level=DEBUG msg=backtrack depth=57
+level=DEBUG msg=backtrack depth=56
+level=DEBUG msg=search depth=56 goal='=/2'
+level=DEBUG msg=backtrack depth=56
+level=DEBUG msg=backtrack depth=55
 level=DEBUG msg=backtrack depth=54
 level=DEBUG msg=backtrack depth=53
 level=DEBUG msg=search depth=53 goal=line_comment/2
@@ -5304,16 +5434,6 @@ level=DEBUG msg=search depth=53 goal='=/2'
 level=DEBUG msg=backtrack depth=53
 level=DEBUG msg=backtrack depth=52
 level=DEBUG msg=backtrack depth=51
-level=DEBUG msg=backtrack depth=50
-level=DEBUG msg=search depth=50 goal=line_comment/2
-level=DEBUG msg=search depth=51 goal='=/2'
-level=DEBUG msg=backtrack depth=51
-level=DEBUG msg=backtrack depth=50
-level=DEBUG msg=search depth=50 goal=c_comment/2
-level=DEBUG msg=search depth=51 goal='=/2'
-level=DEBUG msg=backtrack depth=51
-level=DEBUG msg=backtrack depth=50
-level=DEBUG msg=search depth=50 goal='=/2'
 level=DEBUG msg=backtrack depth=50
 level=DEBUG msg=backtrack depth=49
 level=DEBUG msg=backtrack depth=48
@@ -5675,38 +5795,56 @@ level=DEBUG msg=backtrack depth=69
 level=DEBUG msg=backtrack depth=68
 level=DEBUG msg=backtrack depth=67
 level=DEBUG msg=search depth=67 goal='=/2'
-level=DEBUG msg=search depth=68 goal='=/2'
-level=DEBUG msg=search depth=69 goal='=/2'
-level=DEBUG msg=search depth=70 goal=ws/2
-level=DEBUG msg=search depth=71 goal='=/2'
-level=DEBUG msg=search depth=72 goal=space/1
-level=DEBUG msg=backtrack depth=72
-level=DEBUG msg=backtrack depth=71
-level=DEBUG msg=search depth=71 goal=line_comment/2
+level=DEBUG msg=search depth=68 goal=expr_to_term/2
+level=DEBUG msg=search depth=69 goal=op_type_position/2
+level=DEBUG msg=search depth=70 goal=expr_to_term/2
+level=DEBUG msg=search depth=71 goal=neq/2
 level=DEBUG msg=search depth=72 goal='=/2'
-level=DEBUG msg=backtrack depth=72
-level=DEBUG msg=backtrack depth=71
-level=DEBUG msg=search depth=71 goal=c_comment/2
-level=DEBUG msg=search depth=72 goal='=/2'
-level=DEBUG msg=backtrack depth=72
-level=DEBUG msg=backtrack depth=71
-level=DEBUG msg=search depth=71 goal='=/2'
-level=DEBUG msg=search depth=72 goal=ws/2
 level=DEBUG msg=search depth=73 goal='=/2'
-level=DEBUG msg=backtrack depth=73
-level=DEBUG msg=search depth=73 goal=line_comment/2
 level=DEBUG msg=search depth=74 goal='=/2'
+level=DEBUG msg=search depth=75 goal='=/2'
+level=DEBUG msg=search depth=76 goal=ws/2
+level=DEBUG msg=search depth=77 goal='=/2'
+level=DEBUG msg=search depth=78 goal=space/1
+level=DEBUG msg=backtrack depth=78
+level=DEBUG msg=backtrack depth=77
+level=DEBUG msg=search depth=77 goal=line_comment/2
+level=DEBUG msg=search depth=78 goal='=/2'
+level=DEBUG msg=backtrack depth=78
+level=DEBUG msg=backtrack depth=77
+level=DEBUG msg=search depth=77 goal=c_comment/2
+level=DEBUG msg=search depth=78 goal='=/2'
+level=DEBUG msg=backtrack depth=78
+level=DEBUG msg=backtrack depth=77
+level=DEBUG msg=search depth=77 goal='=/2'
+level=DEBUG msg=search depth=78 goal=ws/2
+level=DEBUG msg=search depth=79 goal='=/2'
+level=DEBUG msg=backtrack depth=79
+level=DEBUG msg=search depth=79 goal=line_comment/2
+level=DEBUG msg=search depth=80 goal='=/2'
+level=DEBUG msg=backtrack depth=80
+level=DEBUG msg=backtrack depth=79
+level=DEBUG msg=search depth=79 goal=c_comment/2
+level=DEBUG msg=search depth=80 goal='=/2'
+level=DEBUG msg=backtrack depth=80
+level=DEBUG msg=backtrack depth=79
+level=DEBUG msg=search depth=79 goal='=/2'
+level=DEBUG msg=backtrack depth=79
+level=DEBUG msg=backtrack depth=78
+level=DEBUG msg=backtrack depth=77
+level=DEBUG msg=backtrack depth=76
+level=DEBUG msg=backtrack depth=75
 level=DEBUG msg=backtrack depth=74
-level=DEBUG msg=backtrack depth=73
-level=DEBUG msg=search depth=73 goal=c_comment/2
-level=DEBUG msg=search depth=74 goal='=/2'
-level=DEBUG msg=backtrack depth=74
-level=DEBUG msg=backtrack depth=73
-level=DEBUG msg=search depth=73 goal='=/2'
 level=DEBUG msg=backtrack depth=73
 level=DEBUG msg=backtrack depth=72
 level=DEBUG msg=backtrack depth=71
 level=DEBUG msg=backtrack depth=70
+level=DEBUG msg=backtrack depth=69
+level=DEBUG msg=search depth=69 goal=op_type_position/2
+level=DEBUG msg=backtrack depth=69
+level=DEBUG msg=search depth=69 goal=op_type_position/2
+level=DEBUG msg=backtrack depth=69
+level=DEBUG msg=search depth=69 goal=neq/2
 level=DEBUG msg=backtrack depth=69
 level=DEBUG msg=backtrack depth=68
 level=DEBUG msg=backtrack depth=67
@@ -6264,14 +6402,30 @@ level=DEBUG msg=backtrack depth=48
 level=DEBUG msg=backtrack depth=47
 level=DEBUG msg=backtrack depth=46
 level=DEBUG msg=search depth=46 goal='=/2'
-level=DEBUG msg=search depth=47 goal='=/2'
-level=DEBUG msg=search depth=48 goal='=/2'
-level=DEBUG msg=search depth=49 goal=ws/2
+level=DEBUG msg=search depth=47 goal=expr_to_term/2
+level=DEBUG msg=search depth=48 goal=neq/2
+level=DEBUG msg=search depth=49 goal='=/2'
 level=DEBUG msg=search depth=50 goal='=/2'
-level=DEBUG msg=search depth=51 goal=space/1
+level=DEBUG msg=search depth=51 goal='=/2'
 level=DEBUG msg=search depth=52 goal=ws/2
 level=DEBUG msg=search depth=53 goal='=/2'
 level=DEBUG msg=search depth=54 goal=space/1
+level=DEBUG msg=search depth=55 goal=ws/2
+level=DEBUG msg=search depth=56 goal='=/2'
+level=DEBUG msg=search depth=57 goal=space/1
+level=DEBUG msg=backtrack depth=57
+level=DEBUG msg=backtrack depth=56
+level=DEBUG msg=search depth=56 goal=line_comment/2
+level=DEBUG msg=search depth=57 goal='=/2'
+level=DEBUG msg=backtrack depth=57
+level=DEBUG msg=backtrack depth=56
+level=DEBUG msg=search depth=56 goal=c_comment/2
+level=DEBUG msg=search depth=57 goal='=/2'
+level=DEBUG msg=backtrack depth=57
+level=DEBUG msg=backtrack depth=56
+level=DEBUG msg=search depth=56 goal='=/2'
+level=DEBUG msg=backtrack depth=56
+level=DEBUG msg=backtrack depth=55
 level=DEBUG msg=backtrack depth=54
 level=DEBUG msg=backtrack depth=53
 level=DEBUG msg=search depth=53 goal=line_comment/2
@@ -6286,16 +6440,6 @@ level=DEBUG msg=search depth=53 goal='=/2'
 level=DEBUG msg=backtrack depth=53
 level=DEBUG msg=backtrack depth=52
 level=DEBUG msg=backtrack depth=51
-level=DEBUG msg=backtrack depth=50
-level=DEBUG msg=search depth=50 goal=line_comment/2
-level=DEBUG msg=search depth=51 goal='=/2'
-level=DEBUG msg=backtrack depth=51
-level=DEBUG msg=backtrack depth=50
-level=DEBUG msg=search depth=50 goal=c_comment/2
-level=DEBUG msg=search depth=51 goal='=/2'
-level=DEBUG msg=backtrack depth=51
-level=DEBUG msg=backtrack depth=50
-level=DEBUG msg=search depth=50 goal='=/2'
 level=DEBUG msg=backtrack depth=50
 level=DEBUG msg=backtrack depth=49
 level=DEBUG msg=backtrack depth=48

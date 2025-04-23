@@ -8,8 +8,10 @@ import (
 	"slices"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/brunokim/prol-go/kif"
+	"github.com/brunokim/prol-go/profiler"
 )
 
 // --- Database ---
@@ -20,6 +22,7 @@ type Database struct {
 	index1     map[Indicator][]*ruleIndex
 	Logger     *kif.Logger
 	dbg        *debugger
+	Profiler   *profiler.Profiler
 }
 
 // f(1). f(s(a, b)). f(X). f(Y). f(p). f(Z).
@@ -415,6 +418,14 @@ func (s *solver) dfs(env *environment) error {
 	s.depth++
 	defer func() { s.depth-- }()
 	s.db.Logger.Log(kif.DEBUG, kif.KV{"msg", "search"}, kif.KV{"depth", s.depth}, kif.KV{"goal", ind})
+	if s.db.Profiler != nil {
+		s.db.Profiler.Enter(profiler.Location{ind.String(), 1})
+		start := time.Now()
+		defer func() {
+			s.db.Profiler.DoSample(time.Now().Sub(start).Nanoseconds())
+			s.db.Profiler.Exit()
+		}()
+	}
 	// Check call depth.
 	if s.maxDepth > 0 && s.depth > s.maxDepth {
 		return MaxDepthError{}

@@ -10,6 +10,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 
 	"github.com/brunokim/prol-go/kif"
+	"github.com/brunokim/prol-go/profiler"
 	"github.com/brunokim/prol-go/prol"
 )
 
@@ -345,6 +346,7 @@ func TestPreludeExpressions(t *testing.T) {
 			}
 			db := db.Clone()
 			var err error
+			// Configure logger
 			db.Logger, err = kif.NewFileLogger("testoutput/" + test.name + ".log")
 			if err != nil {
 				t.Fatalf("error opening log: %v", err)
@@ -352,6 +354,11 @@ func TestPreludeExpressions(t *testing.T) {
 			defer db.Logger.Close()
 			db.Logger.DisableCaller = true
 			db.Logger.LogLevel = kif.DEBUG
+			// Configure profiler
+			db.Profiler, err = profiler.NewProfiler(profiler.Type{"cpu", "nanoseconds"})
+			if err != nil {
+				t.Fatalf("error opening profiler: %v", err)
+			}
 			err = db.Interpret(test.content)
 			if err != nil {
 				t.Errorf("test interpret err: %v", err)
@@ -362,6 +369,9 @@ func TestPreludeExpressions(t *testing.T) {
 			}
 			if diff := cmp.Diff(test.want, got, opts...); diff != "" {
 				t.Errorf("(-want, +got):\n%s", diff)
+			}
+			if err := db.Profiler.WriteFile("testoutput/" + test.name + ".prof"); err != nil {
+				t.Log(err)
 			}
 		})
 	}
