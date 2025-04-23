@@ -4,6 +4,7 @@ import (
 	"compress/gzip"
 	"fmt"
 	"os"
+	"time"
 
 	profilepb "github.com/brunokim/prol-go/proto/profile"
 	"google.golang.org/protobuf/proto"
@@ -48,6 +49,40 @@ func NewProfiler(sampleTypes ...Type) (*Profiler, error) {
 	}
 	return p, nil
 }
+
+// ---
+
+type CPUProfiler struct {
+	p      *Profiler
+	starts []time.Time
+}
+
+func NewCPUProfiler() *CPUProfiler {
+	p, _ := NewProfiler(Type{"cpu", "nanoseconds"})
+	return &CPUProfiler{
+		p:      p,
+		starts: []time.Time{time.Now()},
+	}
+}
+
+func (p *CPUProfiler) Enter(loc Location) {
+	p.p.Enter(loc)
+	p.starts = append(p.starts, time.Now())
+}
+
+func (p *CPUProfiler) Exit() {
+	n := len(p.starts)
+	var start time.Time
+	start, p.starts = p.starts[n-1], p.starts[:n-1]
+	p.p.DoSample(time.Now().Sub(start).Nanoseconds())
+	p.p.Exit()
+}
+
+func (p *CPUProfiler) WriteFile(path string) error {
+	return p.p.WriteFile(path)
+}
+
+// ---
 
 func (p *Profiler) WriteFile(path string) error {
 	f, err := os.Create(path)

@@ -8,7 +8,6 @@ import (
 	"slices"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/brunokim/prol-go/kif"
 	"github.com/brunokim/prol-go/profiler"
@@ -17,12 +16,12 @@ import (
 // --- Database ---
 
 type Database struct {
-	indicators []Indicator
-	index0     map[Indicator][]Rule
-	index1     map[Indicator][]*ruleIndex
-	Logger     *kif.Logger
-	dbg        *debugger
-	Profiler   *profiler.Profiler
+	indicators  []Indicator
+	index0      map[Indicator][]Rule
+	index1      map[Indicator][]*ruleIndex
+	Logger      *kif.Logger
+	dbg         *debugger
+	CPUProfiler *profiler.CPUProfiler
 }
 
 // f(1). f(s(a, b)). f(X). f(Y). f(p). f(Z).
@@ -418,13 +417,9 @@ func (s *solver) dfs(env *environment) error {
 	s.depth++
 	defer func() { s.depth-- }()
 	s.db.Logger.Log(kif.DEBUG, kif.KV{"msg", "search"}, kif.KV{"depth", s.depth}, kif.KV{"goal", ind})
-	if s.db.Profiler != nil {
-		s.db.Profiler.Enter(profiler.Location{ind.String(), 1})
-		start := time.Now()
-		defer func() {
-			s.db.Profiler.DoSample(time.Now().Sub(start).Nanoseconds())
-			s.db.Profiler.Exit()
-		}()
+	if s.db.CPUProfiler != nil {
+		s.db.CPUProfiler.Enter(profiler.Location{ind.String(), 1})
+		defer s.db.CPUProfiler.Exit()
 	}
 	// Check call depth.
 	if s.maxDepth > 0 && s.depth > s.maxDepth {

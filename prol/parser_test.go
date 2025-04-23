@@ -3,6 +3,7 @@ package prol_test
 import (
 	_ "embed"
 	"errors"
+	"os"
 	"reflect"
 	"testing"
 
@@ -346,19 +347,20 @@ func TestPreludeExpressions(t *testing.T) {
 			}
 			db := db.Clone()
 			var err error
-			// Configure logger
-			db.Logger, err = kif.NewFileLogger("testoutput/" + test.name + ".log")
+			// Configure logger & profiler.
+			loggerOut := "testoutput/" + test.name + ".log"
+			profilerOut := "testoutput/" + test.name + ".prof"
+			db.Logger, err = kif.NewFileLogger(loggerOut)
 			if err != nil {
 				t.Fatalf("error opening log: %v", err)
 			}
 			defer db.Logger.Close()
 			db.Logger.DisableCaller = true
 			db.Logger.LogLevel = kif.DEBUG
-			// Configure profiler
-			db.Profiler, err = profiler.NewProfiler(profiler.Type{"cpu", "nanoseconds"})
-			if err != nil {
-				t.Fatalf("error opening profiler: %v", err)
+			if _, ok := os.LookupEnv("PROL_TEST_RUN_PROFILER"); ok {
+				db.CPUProfiler = profiler.NewCPUProfiler()
 			}
+			// Consult file and run query.
 			err = db.Interpret(test.content)
 			if err != nil {
 				t.Errorf("test interpret err: %v", err)
@@ -370,8 +372,10 @@ func TestPreludeExpressions(t *testing.T) {
 			if diff := cmp.Diff(test.want, got, opts...); diff != "" {
 				t.Errorf("(-want, +got):\n%s", diff)
 			}
-			if err := db.Profiler.WriteFile("testoutput/" + test.name + ".prof"); err != nil {
-				t.Log(err)
+			if db.CPUProfiler != nil {
+				if err := db.CPUProfiler.WriteFile(profilerOut); err != nil {
+					t.Log(err)
+				}
 			}
 		})
 	}
