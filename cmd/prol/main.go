@@ -5,6 +5,7 @@ import (
 	"io"
 	"iter"
 	"log"
+	"strings"
 
 	"github.com/brunokim/prol-go/kif"
 	"github.com/brunokim/prol-go/prol"
@@ -30,10 +31,15 @@ type shell struct {
 
 func (s *shell) setQueryState() {
 	s.state = queryState
+	s.nextSolution = nil
+	s.stopSolutions = nil
+	s.solutionErrFn = nil
 	s.rl.SetPrompt("?- ")
 }
 
-func (s *shell) setSolutionsState() {
+func (s *shell) setSolutionsState(solutions iter.Seq[prol.Solution], errFn func() error) {
+	s.nextSolution, s.stopSolutions = iter.Pull(solutions)
+	s.solutionErrFn = errFn
 	s.state = solutionsState
 	s.rl.SetPrompt("")
 }
@@ -43,10 +49,7 @@ func (s *shell) readQuery(text string) error {
 	if err != nil {
 		return err
 	}
-	solutions, errFn := s.db.Solve(query.(prol.Clause))
-	s.nextSolution, s.stopSolutions = iter.Pull(solutions)
-	s.solutionErrFn = errFn
-	s.setSolutionsState()
+	s.setSolutionsState(s.db.Solve(query.(prol.Clause)))
 	return s.printSolution()
 }
 
@@ -56,7 +59,6 @@ func (s *shell) printf(format string, args ...any) {
 
 func (s *shell) printSolution() error {
 	solution, ok := s.nextSolution()
-	s.printf("\n")
 	if !ok {
 		return s.abortSolutions()
 	}
@@ -70,58 +72,13 @@ func (s *shell) printSolution() error {
 
 func (s *shell) abortSolutions() error {
 	err := s.solutionErrFn()
-	s.nextSolution, s.stopSolutions, s.solutionErrFn = nil, nil, nil
-	s.state = queryState
+	s.setQueryState()
 	return err
 }
 
-func (s *shell) runeListener(line []rune, pos int, key rune) ([]rune, int, bool) {
-	if s.state != solutionsState {
-		// No change.
-		return nil, 0, false
-	}
-	switch key {
-	case 0, '\n':
-		// First call, or enter, do nothing.
-		return nil, 0, false
-	case ';':
-		if err := s.printSolution(); err != nil {
-			log.Println(err)
-		}
-		return nil, 0, true
-	case '.':
-		if err := s.abortSolutions(); err != nil {
-			log.Println(err)
-		}
-		return nil, 0, true
-	default:
-		s.rl.SetPrompt(";) continue .) stop ")
-		return nil, 0, true
-	}
-}
-
-func main() {
-	fmt.Println("prol shell (Ctrl+D to exit)")
-	db := prol.Prelude()
-	db.Logger = kif.NewStderrLogger()
-	db.Logger.LogLevel = kif.INFO
-	shell := &shell{db: db}
-	// Configure readline.
-	rl, err := readline.NewFromConfig(&readline.Config{
-		HistoryFile: ".prol-history",
-		Listener:    shell.runeListener,
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer rl.Close()
-	rl.CaptureExitSignal()
-	log.SetOutput(rl.Stdout())
-	shell.rl = rl
-	shell.setQueryState()
-	// Read loop.
+func (s *shell) mainLoop() {
 	for {
-		text, err := shell.rl.ReadLine()
+		text, err := s.rl.ReadLine()
 		if err != nil {
 			if err != io.EOF {
 				log.Println(err)
@@ -131,12 +88,47 @@ func main() {
 		if text == "" {
 			continue
 		}
-		if shell.state != queryState {
-			log.Println("invalid state", shell.state)
-			break
-		}
-		if err := shell.readQuery(text); err != nil {
-			log.Println(err)
+		switch s.state {
+		case queryState:
+			if err := s.readQuery(text); err != nil {
+				log.Println(err)
+			}
+		case solutionsState:
+			switch strings.TrimSpace(text) {
+			case ";":
+				if err := s.printSolution(); err != nil {
+					log.Println(err)
+				}
+			case ".":
+				if err := s.abortSolutions(); err != nil {
+					log.Println(err)
+				}
+			case "exit":
+				return
+			default:
+				s.rl.SetPrompt(";) continue .) stop ")
+			}
 		}
 	}
+}
+
+func main() {
+	fmt.Println("prol shell (press Ctrl+D, or type 'exit' to exit)")
+	db := prol.Prelude()
+	db.Logger = kif.NewStderrLogger()
+	db.Logger.LogLevel = kif.INFO
+	shell := &shell{db: db}
+	// Configure readline.
+	rl, err := readline.NewFromConfig(&readline.Config{
+		HistoryFile: ".prol-history",
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rl.Close()
+	rl.CaptureExitSignal()
+	log.SetOutput(rl.Stderr())
+	shell.rl = rl
+	shell.setQueryState()
+	shell.mainLoop()
 }
