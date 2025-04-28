@@ -1,6 +1,7 @@
 % This is the language lexer.
 % It transforms a list of characters into a list of tokens.
 
+
 % The lexer keeps a small bit of state, namely, the position in the char list.
 % The state updates at each new char read.
 
@@ -40,7 +41,7 @@ lex_token(Token, S0, S, L0, L) :-
   lex_punctuation(Token, S0, S, L0, L).
 
 
-% lex_atom/5 extracts an atom from the character list. An atom may be an arbitrary number of
+% lex_atom//3 extracts an atom from the character list. An atom may be an arbitrary number of
 % identifier characters, starting with lowercase; or a single character prepended by a backslash; or
 % a nil atom (i.e., []).
 % 
@@ -58,7 +59,7 @@ lex_atom(token(atom, \.(\[, \.(\], [])), S0), S0, S, L0, L) :-
   read_char(\], S1, S, L1, L).
 
 
-% lex_var/5 extracts a variable from the character list. A variable may be an arbitrary number of
+% lex_var//3 extracts a variable from the character list. A variable may be an arbitrary number of
 % identifier characters, starting with an uppercase letter or an underscore.
 
 lex_var(token(var, \.(Char, Chars), S0), S0, S, L0, L) :-
@@ -67,7 +68,7 @@ lex_var(token(var, \.(Char, Chars), S0), S0, S, L0, L) :-
   lex_identifier_chars(Chars, S1, S, L1, L).
 
 
-% lex_int/5 extracts an integer from the character list. An integer may be an arbitrary number of digits.
+% lex_int//3 extracts an integer from the character list. An integer may be an arbitrary number of digits.
 
 lex_int(token(int, \.(Char, Chars), S0), S0, S, L0, L) :-
   read_char(Char, S0, S1, L0, L1),
@@ -75,8 +76,8 @@ lex_int(token(int, \.(Char, Chars), S0), S0, S, L0, L) :-
   lex_digits(Chars, S1, S, L1, L).
 
 
-% lex_whitespace/5 extracts whitespace from the character list. Whitespace may be an arbitrary number of
-% spaces, tabs, or newlines; or a line comment starting with '%' and ending with a newline.
+% lex_whitespace//3 extracts whitespace from the character list. Whitespace may be an arbitrary number of
+% spaces or newlines; or a line comment starting with '%' and ending with a newline.
 %
 % Later, we will also accept block comments starting with '/*' and ending with '*/'.
 
@@ -89,7 +90,8 @@ lex_whitespace(token(whitespace, \.(Char, Chars), S0), S0, S, L0, L) :-
   line_comment_start(Char),
   lex_line_comment(Chars, S1, S, L1, L).
 
-% lex_punctuation/5 extracts punctuation from the character list.
+
+% lex_punctuation//3 extracts punctuation from the character list.
 
 lex_punctuation(token(open_paren, \.(\(, []), S0), S0, S, L0, L) :-
   read_char(\(, S0, S, L0, L).
@@ -133,6 +135,7 @@ lex_line_comment(\.(Char, []), S0, S, L0, L) :-
   read_char(Char, S0, S1, L0, L1),
   \=(Char, \
 ).
+
 
 % Character classes.
 
