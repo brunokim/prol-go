@@ -39,7 +39,8 @@ lex_token(Token, S0, S, L0, L) :-
 
 
 doc(lex_atom, extracts_an_atom_of_an_arbitrary_number_of_identifier_chars).
-doc(starting_with_lowercase, or_a_single_char_prepended_by_backslash).
+doc(starting_with_lowercase, a_single_char_prepended_by_backslash, or).
+doc(a_nil_atom).
 
 lex_atom(token(atom, \.(Char, Chars), S0), S0, S, L0, L) :-
   read_char(Char, S0, S1, L0, L1),
@@ -48,6 +49,9 @@ lex_atom(token(atom, \.(Char, Chars), S0), S0, S, L0, L) :-
 lex_atom(token(atom, \.(\\, Char), S0), S0, S, L0, L) :-
   read_char(\\, S0, S1, L0, L1),
   read_char(Char, S1, S, L1, L).
+lex_atom(token(atom, \.(\[, \.(\], [])), S0), S0, S, L0, L) :-
+  read_char(\[, S0, S1, L0, L1),
+  read_char(\], S1, S, L1, L).
 
 
 doc(lex_var, extracts_an_var_of_an_arbitrary_number_of_identifier_chars).
