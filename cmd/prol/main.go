@@ -1,15 +1,23 @@
 package main
 
 import (
+	"encoding/csv"
+	"flag"
 	"fmt"
 	"io"
 	"iter"
 	"log"
+	"os"
 	"strings"
 
 	"github.com/brunokim/prol-go/kif"
 	"github.com/brunokim/prol-go/prol"
 	"github.com/ergochat/readline"
+)
+
+var (
+	parserName   = flag.String("parser", "prelude", "Parser to use. One of (bootstrap, prelude).")
+	consultPaths = flag.String("consult-paths", "", "Comma-separated paths to consult")
 )
 
 type shellState int
@@ -112,11 +120,56 @@ func (s *shell) mainLoop() {
 	}
 }
 
-func main() {
-	fmt.Println("prol shell (press Ctrl+D, or type 'exit' to exit)")
-	db := prol.Prelude()
+type dbFunc func(opts ...any) *prol.Database
+
+var (
+	parsers = map[string]dbFunc{
+		"bootstrap": func(opts ...any) *prol.Database { return prol.Bootstrap() },
+		"prelude":   prol.Prelude,
+	}
+)
+
+func parseCSVRow(text string) ([]string, error) {
+	r := csv.NewReader(strings.NewReader(text))
+	return r.Read()
+}
+
+func parser() *prol.Database {
+	dbFn, ok := parsers[*parserName]
+	if !ok {
+		log.Fatalf("Invalid parser %q", *parserName)
+	}
+	db := dbFn()
 	db.Logger = kif.NewStderrLogger()
 	db.Logger.LogLevel = kif.INFO
+	return db
+}
+
+func consult(db *prol.Database) {
+	paths, err := parseCSVRow(*consultPaths)
+	if err != nil {
+		log.Fatalf("Invalid consult paths: %v", err)
+	}
+	for _, path := range paths {
+		bs, err := os.ReadFile(path)
+		if err != nil {
+			log.Printf("Could not consult file: %v", err)
+			continue
+		}
+		err = db.Interpret(string(bs))
+		if err != nil {
+			log.Printf("Failure to consult file: %v", err)
+			continue
+		}
+		log.Printf("Consulted file %s", path)
+	}
+}
+
+func main() {
+	flag.Parse()
+	fmt.Println("prol shell (press Ctrl+D, or type 'exit' to exit)")
+	db := parser()
+	consult(db)
 	shell := &shell{db: db}
 	// Configure readline.
 	rl, err := readline.NewFromConfig(&readline.Config{
