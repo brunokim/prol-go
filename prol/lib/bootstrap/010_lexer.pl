@@ -1,11 +1,10 @@
-doc(this_is_the_language_lexer).
-doc(it_transforms_a_list_of_characters_into_a_list_of_tokens).
+% This is the language lexer.
+% It transforms a list of characters into a list of tokens.
 
+% The lexer keeps a small bit of state, namely, the position in the char list.
+% The state updates at each new char read.
 
-doc(the_lexer_keeps_a_small_bit_of_state, namely, the_position_in_the_char_list).
-doc(the_state_updates_at_each_new_char_read).
-
-initial_lex_state(1).
+initial_lex_state(0).
 
 update_lex_state(Pos, Pos1) :-
   is(Pos1, \+(Pos, 1)).
@@ -14,8 +13,11 @@ read_char(Char, S0, S, \.(Char, L), L) :-
   update_lex_state(S0, S).
 
 
-doc(lex_tokens, transforms_a_list_of_chars_into_tokens).
-doc(each_token_has_three_arguments, token_type, text, and_the_lexer_state).
+% lex_tokens/2 transforms a list of chars into tokens.
+% A token is represented by token(Type, Text, State).
+% - Type is the type of token (atom, var, int, whitespace, punctuation).
+% - Text is the text of the token.
+% - State is the lexer state before reading the token.
 
 lex_tokens(Text, Tokens) :-
   initial_lex_state(S0),
@@ -38,9 +40,11 @@ lex_token(Token, S0, S, L0, L) :-
   lex_punctuation(Token, S0, S, L0, L).
 
 
-doc(lex_atom, extracts_an_atom_of_an_arbitrary_number_of_identifier_chars).
-doc(starting_with_lowercase, a_single_char_prepended_by_backslash, or).
-doc(a_nil_atom).
+% lex_atom/5 extracts an atom from the character list. An atom may be an arbitrary number of
+% identifier characters, starting with lowercase; or a single character prepended by a backslash; or
+% a nil atom (i.e., []).
+% 
+% Later, we will also accept single-quoted atoms.
 
 lex_atom(token(atom, \.(Char, Chars), S0), S0, S, L0, L) :-
   read_char(Char, S0, S1, L0, L1),
@@ -54,8 +58,8 @@ lex_atom(token(atom, \.(\[, \.(\], [])), S0), S0, S, L0, L) :-
   read_char(\], S1, S, L1, L).
 
 
-doc(lex_var, extracts_an_var_of_an_arbitrary_number_of_identifier_chars).
-doc(starting_with_uppercase, or_an_underscore).
+% lex_var/5 extracts a variable from the character list. A variable may be an arbitrary number of
+% identifier characters, starting with an uppercase letter or an underscore.
 
 lex_var(token(var, \.(Char, Chars), S0), S0, S, L0, L) :-
   read_char(Char, S0, S1, L0, L1),
@@ -63,7 +67,7 @@ lex_var(token(var, \.(Char, Chars), S0), S0, S, L0, L) :-
   lex_identifier_chars(Chars, S1, S, L1, L).
 
 
-doc(lex_int, extracts_an_integer_with_an_arbitrary_number_of_digits).
+% lex_int/5 extracts an integer from the character list. An integer may be an arbitrary number of digits.
 
 lex_int(token(int, \.(Char, Chars), S0), S0, S, L0, L) :-
   read_char(Char, S0, S1, L0, L1),
@@ -71,17 +75,21 @@ lex_int(token(int, \.(Char, Chars), S0), S0, S, L0, L) :-
   lex_digits(Chars, S1, S, L1, L).
 
 
-doc(lex_whitespace, creates_a_token_for_space_characters).
-doc(this_will_be_useful_to_determine_newline_positions).
-doc(as_well_as_keep_tabs_on_comments, when_we_implement_them).
+% lex_whitespace/5 extracts whitespace from the character list. Whitespace may be an arbitrary number of
+% spaces, tabs, or newlines; or a line comment starting with '%' and ending with a newline.
+%
+% Later, we will also accept block comments starting with '/*' and ending with '*/'.
 
 lex_whitespace(token(whitespace, \.(Char, Chars), S0), S0, S, L0, L) :-
   read_char(Char, S0, S1, L0, L1),
   space(Char),
   lex_spaces(Chars, S1, S, L1, L).
+lex_whitespace(token(whitespace, \.(Char, Chars), S0), S0, S, L0, L) :-
+  read_char(Char, S0, S1, L0, L1),
+  line_comment_start(Char),
+  lex_line_comment(Chars, S1, S, L1, L).
 
-
-doc(lex_punctuation, tokenizes_some_characters_with_special_significance).
+% lex_punctuation/5 extracts punctuation from the character list.
 
 lex_punctuation(token(open_paren, \.(\(, []), S0), S0, S, L0, L) :-
   read_char(\(, S0, S, L0, L).
@@ -96,11 +104,11 @@ lex_punctuation(token(implied_by, \.(\:, \.(\-, [])), S0), S0, S, L0, L) :-
   read_char(\-, S1, S, L1, L).
 
 
-doc(the_following_predicates_tokenize_repeated_chars_of_the_same_kind).
+% The following predicates tokenize repeated characters of the same kind.
 
 lex_identifier_chars(\.(Char, Chars), S0, S, L0, L) :-
   read_char(Char, S0, S1, L0, L1),
-  ident(Char),
+  identifier_char(Char),
   lex_identifier_chars(Chars, S1, S, L1, L).
 lex_identifier_chars([], S, S, L, L).
 
@@ -115,4 +123,31 @@ lex_digits(\.(Char, Chars), S0, S, L0, L) :-
   ascii_digit(Char),
   lex_digits(Chars, S1, S, L1, L).
 lex_digits([], S, S, L, L).
+
+lex_line_comment(\.(Char, Chars), S0, S, L0, L) :-
+  read_char(Char, S0, S1, L0, L1),
+  neq(Char, \
+),
+  lex_line_comment(Chars, S1, S, L1, L).
+lex_line_comment(\.(Char, []), S0, S, L0, L) :-
+  read_char(Char, S0, S1, L0, L1),
+  \=(Char, \
+).
+
+% Character classes.
+
+atom_start(Char) :-
+  ascii_lower(Char).
+
+var_start(\_).
+var_start(Char) :-
+  ascii_upper(Char).
+
+identifier_char(\_).
+identifier_char(Char) :-
+  ascii_lower(Char).
+identifier_char(Char) :-
+  ascii_upper(Char).
+identifier_char(Char) :-
+  ascii_digit(Char).
 

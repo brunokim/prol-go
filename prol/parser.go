@@ -21,19 +21,27 @@ func readLib(name string) string {
 	return string(bs)
 }
 
-func Prelude(opts ...any) *Database {
-	db := Bootstrap()
-	entries, err := lib.ReadDir("lib/prelude")
+func dirFiles(dirName string) []string {
+	entries, err := lib.ReadDir(dirName)
 	if err != nil {
 		panic(fmt.Sprintf("prelude library error! %v", err))
 	}
+	names := make([]string, len(entries))
 	slices.SortFunc(entries, func(a, b fs.DirEntry) int {
 		return strings.Compare(a.Name(), b.Name())
 	})
-	for _, entry := range entries {
-		content := readLib("lib/prelude/" + entry.Name())
+	for i, entry := range entries {
+		names[i] = dirName + "/" + entry.Name()
+	}
+	return names
+}
+
+func Prelude(opts ...any) *Database {
+	db := Bootstrap()
+	for _, name := range dirFiles("lib/prelude") {
+		content := readLib(name)
 		if err := db.Interpret(content, opts...); err != nil {
-			panic(fmt.Sprintf("prelude library error! %s: %v", entry.Name(), err))
+			panic(fmt.Sprintf("prelude library error! %s: %v", name, err))
 		}
 	}
 	return db
@@ -43,15 +51,25 @@ func Prelude(opts ...any) *Database {
 
 func Bootstrap() *Database {
 	p := parser{readLib("lib/bootstrap.pl"), 0}
-	rules := p.database()
-	db := NewDatabase(rules...)
-	if !p.isAtEOF() {
-		msg := fmt.Sprintf(
-			"trailing characters at position %d:\n----\n%s\n----",
-			p.pos, p.text[p.pos:min(len(p.text), p.pos+50)])
-		panic(fmt.Sprintf("bootstrap library error!\n%s", msg))
+	rules, err := p.database()
+	if err != nil {
+		panic(fmt.Sprintf("bootstrap library error!\n%v", err))
 	}
-	return db
+	return NewDatabase(rules...)
+}
+
+func Bootstrap2(opts ...any) *Database {
+	var rules []Rule
+	for _, name := range dirFiles("lib/bootstrap") {
+		content := readLib(name)
+		p := parser{content, 0}
+		newRules, err := p.database()
+		if err != nil {
+			panic(fmt.Sprintf("bootstrap2 library error!\n%v", err))
+		}
+		rules = append(rules, newRules...)
+	}
+	return NewDatabase(rules...)
 }
 
 type parser struct {
@@ -78,7 +96,7 @@ func (p *parser) match(pattern string) bool {
 	return (m != nil)
 }
 
-func (p *parser) database() []Rule {
+func (p *parser) database() ([]Rule, error) {
 	var clauses []Rule
 	p.ws()
 	for !p.isAtEOF() {
@@ -89,7 +107,12 @@ func (p *parser) database() []Rule {
 		clauses = append(clauses, clause)
 		p.ws()
 	}
-	return clauses
+	if !p.isAtEOF() {
+		return clauses, fmt.Errorf(
+			"trailing characters at position %d:\n----\n%s\n----",
+			p.pos, p.text[p.pos:min(len(p.text), p.pos+50)])
+	}
+	return clauses, nil
 }
 
 func (p *parser) clause() (Clause, bool) {
@@ -210,5 +233,5 @@ func (p *parser) var_() (Var, bool) {
 }
 
 func (p *parser) ws() {
-	p.match(`[ \n]*`)
+	p.match(`([ \n]|%[^\n]*)*`)
 }

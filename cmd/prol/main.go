@@ -124,14 +124,19 @@ type dbFunc func(opts ...any) *prol.Database
 
 var (
 	parsers = map[string]dbFunc{
-		"bootstrap": func(opts ...any) *prol.Database { return prol.Bootstrap() },
-		"prelude":   prol.Prelude,
+		"bootstrap":  func(opts ...any) *prol.Database { return prol.Bootstrap() },
+		"bootstrap2": func(opts ...any) *prol.Database { return prol.Bootstrap2() },
+		"prelude":    prol.Prelude,
 	}
 )
 
 func parseCSVRow(text string) ([]string, error) {
 	r := csv.NewReader(strings.NewReader(text))
-	return r.Read()
+	xs, err := r.Read()
+	if err != nil && err != io.EOF {
+		return nil, err
+	}
+	return xs, nil
 }
 
 func parser() *prol.Database {
