@@ -7,17 +7,14 @@ import (
 	"io"
 	"iter"
 	"log"
+	"maps"
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/brunokim/prol-go/kif"
 	"github.com/brunokim/prol-go/prol"
 	"github.com/ergochat/readline"
-)
-
-var (
-	parserName   = flag.String("parser", "prelude", "Parser to use. One of (bootstrap, prelude).")
-	consultPaths = flag.String("consult-paths", "", "Comma-separated paths to consult")
 )
 
 type shellState int
@@ -139,10 +136,21 @@ func parseCSVRow(text string) ([]string, error) {
 	return xs, nil
 }
 
+var (
+	parserName   string
+	consultPaths string
+)
+
+func init() {
+	parserNames := slices.Sorted(maps.Keys(parsers))
+	flag.StringVar(&parserName, "parser", "prelude", "Parser to use. Options: "+strings.Join(parserNames, ", "))
+	flag.StringVar(&consultPaths, "consult-paths", "", "Comma-separated paths to consult, in order")
+}
+
 func parser() *prol.Database {
-	dbFn, ok := parsers[*parserName]
+	dbFn, ok := parsers[parserName]
 	if !ok {
-		log.Fatalf("Invalid parser %q", *parserName)
+		log.Fatalf("Invalid parser %q", parserName)
 	}
 	db := dbFn()
 	db.Logger = kif.NewStderrLogger()
@@ -151,7 +159,7 @@ func parser() *prol.Database {
 }
 
 func consult(db *prol.Database) {
-	paths, err := parseCSVRow(*consultPaths)
+	paths, err := parseCSVRow(consultPaths)
 	if err != nil {
 		log.Fatalf("Invalid consult paths: %v", err)
 	}
