@@ -99,12 +99,12 @@ func (db *Database) Assert(rule Rule) {
 		if f.Arity == 0 {
 			return
 		}
-		firstArg = c[0].Args[0]
+		firstArg = c[0].Term.Args[0]
 	case DCG:
 		if f.Arity == 2 {
 			return
 		}
-		firstArg = c.dcgGoals[0].Args[0]
+		firstArg = c.dcgGoals[0].Term.Args[0]
 	case Builtin:
 		return
 	default:
@@ -139,13 +139,13 @@ func (db *Database) PredicateExists(ind Indicator) bool {
 	return ok
 }
 
-func (db *Database) Matching(goal Struct) []Rule {
-	f := goal.Indicator()
+func (db *Database) Matching(goal Goal) []Rule {
+	f := goal.Term.Indicator()
 	indices, ok := db.index1[f]
 	if !ok {
 		return db.index0[f]
 	}
-	firstArg := Deref(goal.Args[0])
+	firstArg := Deref(goal.Term.Args[0])
 	if _, ok := firstArg.(*Ref); ok {
 		return db.index0[f]
 	}
@@ -198,10 +198,10 @@ func (db *Database) FirstSolution(query Clause, opts ...any) (Solution, error) {
 func (db *Database) Query(text string, opts ...any) (Rule, error) {
 	chars := FromString("query :- " + text)
 	query := Clause{
-		Struct{"query", nil},
-		Struct{"ws", []Term{chars, v("_Rest0")}},
-		Struct{"parse_rule", []Term{v("Rule"), v("_Rest0"), v("_Rest1")}},
-		Struct{"ws", []Term{v("_Rest1"), v("Rest")}},
+		Goal{Term: Struct{"query", nil}},
+		Goal{Term: Struct{"ws", []Term{chars, v("_Rest0")}}},
+		Goal{Term: Struct{"parse_rule", []Term{v("Rule"), v("_Rest0"), v("_Rest1")}}},
+		Goal{Term: Struct{"ws", []Term{v("_Rest1"), v("Rest")}}},
 	}
 	solution, err := db.FirstSolution(query, opts...)
 	if err != nil {
@@ -225,10 +225,10 @@ func (db *Database) Interpret(text string, opts ...any) error {
 	chars := FromString(text)
 	for {
 		query := Clause{
-			Struct{"query", nil},
-			Struct{"ws", []Term{chars, v("_Rest0")}},
-			Struct{"parse_rule", []Term{v("Rule"), v("_Rest0"), v("Rest")}},
-			Struct{"assertz", []Term{v("Rule")}},
+			Goal{Term: Struct{"query", nil}},
+			Goal{Term: Struct{"ws", []Term{chars, v("_Rest0")}}},
+			Goal{Term: Struct{"parse_rule", []Term{v("Rule"), v("_Rest0"), v("Rest")}}},
+			Goal{Term: Struct{"assertz", []Term{v("Rule")}}},
 		}
 		solution, err := db.FirstSolution(query, opts...)
 		if err != nil {
@@ -238,8 +238,8 @@ func (db *Database) Interpret(text string, opts ...any) error {
 	}
 	db.Logger.Info(kif.KV{"msg", "finished asserts"})
 	solution, err := db.FirstSolution(Clause{
-		Struct{"query", nil},
-		Struct{"ws", []Term{chars, v("Rest")}}}, opts...)
+		Goal{Term: Struct{"query", nil}},
+		Goal{Term: Struct{"ws", []Term{chars, v("Rest")}}}}, opts...)
 	if err != nil {
 		return err
 	}
@@ -371,11 +371,11 @@ func (s *solver) solution() Solution {
 // --- Environment
 
 type environment struct {
-	goals  []Struct
+	goals  []Goal
 	parent *environment
 }
 
-func newEnvironment(goals []Struct) *environment {
+func newEnvironment(goals []Goal) *environment {
 	return &environment{goals: goals}
 }
 
@@ -383,7 +383,7 @@ func (env *environment) isDone() bool {
 	return env == nil
 }
 
-func (env *environment) next() (Struct, *environment) {
+func (env *environment) next() (Goal, *environment) {
 	goal, rest := env.goals[0], env.goals[1:]
 	if len(rest) > 0 {
 		return goal, &environment{goals: rest, parent: env.parent}
@@ -391,7 +391,7 @@ func (env *environment) next() (Struct, *environment) {
 	return goal, env.parent
 }
 
-func (env *environment) push(goals []Struct) *environment {
+func (env *environment) push(goals []Goal) *environment {
 	if len(goals) == 0 {
 		return env
 	}
@@ -413,7 +413,7 @@ func (s *solver) dfs(env *environment) error {
 		return nil
 	}
 	goal, env := env.next()
-	ind := goal.Indicator()
+	ind := goal.Term.Indicator()
 	s.depth++
 	defer func() { s.depth-- }()
 	s.db.Logger.Log(kif.DEBUG, kif.KV{"msg", "search"}, kif.KV{"depth", s.depth}, kif.KV{"goal", ind})
@@ -505,9 +505,11 @@ func varToRef(x any, env map[Var]*Ref) any {
 	case Clause:
 		y := make(Clause, len(v))
 		for i, goal := range v {
-			y[i] = varToRef(goal, env).(Struct)
+			y[i] = varToRef(goal, env).(Goal)
 		}
 		return y
+	case Goal:
+		return Goal{varToRef(v.Term, env).(Struct), v.LexerState}
 	case Struct:
 		y := Struct{v.Name, make([]Term, len(v.Args))}
 		for i, arg := range v.Args {

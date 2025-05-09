@@ -6,11 +6,16 @@ import (
 	"strings"
 )
 
+type Goal struct {
+	Term       Struct
+	LexerState Term
+}
+
 type Rule interface {
 	isRule()
 	Indicator() Indicator
 	ToAST() Term
-	Unify(s Solver, goal Struct) (body []Struct, ok bool, err error)
+	Unify(s Solver, goal Goal) (body []Goal, ok bool, err error)
 }
 
 //   cont  | success |  error  |       description        |
@@ -22,20 +27,20 @@ type Rule interface {
 
 // --- Clause ---
 
-type Clause []Struct
+type Clause []Goal
 
 func (Clause) isRule() {}
 
 // --- DCG ---
 
 type DCG struct {
-	dcgGoals []Struct
+	dcgGoals []Goal
 	clause   Clause
 }
 
 func (DCG) isRule() {}
 
-func NewDCG(dcgGoals []Struct) (DCG, error) {
+func NewDCG(dcgGoals []Goal) (DCG, error) {
 	clause, err := toClause(dcgGoals)
 	if err != nil {
 		return DCG{}, err
@@ -46,21 +51,22 @@ func NewDCG(dcgGoals []Struct) (DCG, error) {
 	}, nil
 }
 
-func toClause(dcgGoals []Struct) (Clause, error) {
+func toClause(dcgGoals []Goal) (Clause, error) {
 	// TODO: use some gensym that prevents conflicts with user-defined variables.
 	var c Clause
-	head := dcgGoals[0]
-	c = append(c, Struct{head.Name, slices.Concat(head.Args, []Term{Var("L0"), Var("L")})})
+	head := dcgGoals[0].Term
+	c = append(c, Goal{Struct{head.Name, slices.Concat(head.Args, []Term{Var("L0"), Var("L")})}, dcgGoals[0].LexerState})
 	var k int
-	for i, s := range dcgGoals[1:] {
+	for i, dcgGoal := range dcgGoals[1:] {
 		// List
+		s := dcgGoal.Term
 		terms, tail := ToList(s)
 		if len(terms) > 0 {
 			if tail != Nil {
-				return nil, fmt.Errorf("invalid DCG: goal #%d: improper list: %v", i+1, s)
+				return nil, fmt.Errorf("invalid DCG: goal #%d: improper list: %v", i+1, dcgGoal)
 			}
 			curr, next := Var(fmt.Sprintf("L%d", k)), Var(fmt.Sprintf("L%d", k+1))
-			c = append(c, Struct{"=", []Term{curr, FromImproperList(terms, next)}})
+			c = append(c, Goal{Struct{"=", []Term{curr, FromImproperList(terms, next)}}, dcgGoal.LexerState})
 			k++
 			continue
 		}
@@ -75,17 +81,18 @@ func toClause(dcgGoals []Struct) (Clause, error) {
 				if !ok {
 					return nil, fmt.Errorf("invalid DCG: goal #%d: subgoal #%d: not a struct: %v", i+1, j+1, arg)
 				}
-				c = append(c, goal)
+				// TODO: include lexer state at each embedded goal.
+				c = append(c, Goal{goal, dcgGoal.LexerState})
 			}
 			continue
 		}
 		// Other grammar rules
 		curr, next := Var(fmt.Sprintf("L%d", k)), Var(fmt.Sprintf("L%d", k+1))
-		c = append(c, Struct{s.Name, slices.Concat(s.Args, []Term{curr, next})})
+		c = append(c, Goal{Struct{s.Name, slices.Concat(s.Args, []Term{curr, next})}, dcgGoal.LexerState})
 		k++
 	}
 	curr := Var(fmt.Sprintf("L%d", k))
-	c = append(c, Struct{"=", []Term{curr, Var("L")}})
+	c = append(c, Goal{Struct{"=", []Term{curr, Var("L")}}, dcgGoals[len(dcgGoals)-1].LexerState})
 	return c, nil
 }
 
@@ -93,7 +100,7 @@ func toClause(dcgGoals []Struct) (Clause, error) {
 
 type Builtin struct {
 	indicator Indicator
-	unify     func(Solver, Struct) ([]Struct, bool, error)
+	unify     func(Solver, Goal) ([]Goal, bool, error)
 }
 
 func (Builtin) isRule() {}
@@ -101,11 +108,11 @@ func (Builtin) isRule() {}
 // --- Indicator ---
 
 func (c Clause) Indicator() Indicator {
-	return c[0].Indicator()
+	return c[0].Term.Indicator()
 }
 
 func (c DCG) Indicator() Indicator {
-	return Indicator{c.dcgGoals[0].Name, len(c.dcgGoals[0].Args) + 2}
+	return Indicator{c.dcgGoals[0].Term.Name, len(c.dcgGoals[0].Term.Args) + 2}
 }
 
 func (c Builtin) Indicator() Indicator {
@@ -117,17 +124,17 @@ func (c Builtin) Indicator() Indicator {
 func (c Clause) ToAST() Term {
 	bodyAST := make([]Term, len(c)-1)
 	for i, goal := range c[1:] {
-		bodyAST[i] = goal.ToAST()
+		bodyAST[i] = goal.Term.ToAST()
 	}
-	return Struct{"clause", []Term{c[0].ToAST(), FromList(bodyAST)}}
+	return Struct{"clause", []Term{c[0].Term.ToAST(), FromList(bodyAST)}}
 }
 
 func (c DCG) ToAST() Term {
 	bodyAST := make([]Term, len(c.dcgGoals)-1)
 	for i, goal := range c.dcgGoals[1:] {
-		bodyAST[i] = goal.ToAST()
+		bodyAST[i] = goal.Term.ToAST()
 	}
-	return Struct{"clause", []Term{c.dcgGoals[0].ToAST(), FromList(bodyAST)}}
+	return Struct{"clause", []Term{c.dcgGoals[0].Term.ToAST(), FromList(bodyAST)}}
 }
 
 func (c Builtin) ToAST() Term {
@@ -136,31 +143,31 @@ func (c Builtin) ToAST() Term {
 
 // --- Unify ---
 
-func hasContinuation(cont []Struct) ([]Struct, bool, error) {
+func hasContinuation(cont []Goal) ([]Goal, bool, error) {
 	return cont, true, nil
 }
 
-func isSuccess(ok bool) ([]Struct, bool, error) {
+func isSuccess(ok bool) ([]Goal, bool, error) {
 	return nil, ok, nil
 }
 
-func isError(err error) ([]Struct, bool, error) {
+func isError(err error) ([]Goal, bool, error) {
 	return nil, false, err
 }
 
-func (c Clause) Unify(s Solver, goal Struct) ([]Struct, bool, error) {
+func (c Clause) Unify(s Solver, goal Goal) ([]Goal, bool, error) {
 	c = varToRef(c, map[Var]*Ref{}).(Clause)
-	if ok := s.Unify(c[0], goal); !ok {
+	if ok := s.Unify(c[0].Term, goal.Term); !ok {
 		return isSuccess(false)
 	}
 	return hasContinuation(c[1:])
 }
 
-func (c DCG) Unify(s Solver, goal Struct) ([]Struct, bool, error) {
+func (c DCG) Unify(s Solver, goal Goal) ([]Goal, bool, error) {
 	return c.clause.Unify(s, goal)
 }
 
-func (c Builtin) Unify(s Solver, goal Struct) ([]Struct, bool, error) {
+func (c Builtin) Unify(s Solver, goal Goal) ([]Goal, bool, error) {
 	return c.unify(s, goal)
 }
 
@@ -181,8 +188,8 @@ func goalString(goal Struct, isDCG bool) string {
 	// DCG embedded.
 	if isDCG && goal.Name == "{}" {
 		goals := make([]string, len(goal.Args))
-		for i, goal := range goal.Args {
-			goals[i] = goalString(goal.(Struct) /*isDCG*/, false)
+		for i, arg := range goal.Args {
+			goals[i] = goalString(arg.(Struct), false)
 		}
 		return fmt.Sprintf("{ %s }", strings.Join(goals, ",\n    "))
 	}
@@ -191,26 +198,26 @@ func goalString(goal Struct, isDCG bool) string {
 
 func (c Clause) String() string {
 	isDCG := false
-	head := goalString(c[0], isDCG)
+	head := goalString(c[0].Term, isDCG)
 	if len(c) == 1 {
 		return fmt.Sprintf("%s.", head)
 	}
 	body := make([]string, len(c)-1)
 	for i, goal := range c[1:] {
-		body[i] = goalString(goal, isDCG)
+		body[i] = goalString(goal.Term, isDCG)
 	}
 	return fmt.Sprintf("%s :-\n  %s.", head, strings.Join(body, ",\n  "))
 }
 
 func (c DCG) String() string {
 	isDCG := true
-	head := goalString(c.dcgGoals[0], isDCG)
+	head := goalString(c.dcgGoals[0].Term, isDCG)
 	if len(c.dcgGoals) == 1 {
 		return fmt.Sprintf("%s --> [].", head)
 	}
 	body := make([]string, len(c.dcgGoals)-1)
-	for i, s := range c.dcgGoals[1:] {
-		body[i] = goalString(s, isDCG)
+	for i, goal := range c.dcgGoals[1:] {
+		body[i] = goalString(goal.Term, isDCG)
 	}
 	return fmt.Sprintf("%s -->\n  %s.", head, strings.Join(body, ",\n  "))
 }

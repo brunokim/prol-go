@@ -26,12 +26,24 @@ func ref(name string) *prol.Ref {
 	return prol.NewRef(v(name))
 }
 
+func goal(t prol.Struct) prol.Goal {
+	return prol.Goal{Term: t}
+}
+
+func goals(ts []prol.Struct) []prol.Goal {
+	goals := make([]prol.Goal, len(ts))
+	for i, t := range ts {
+		goals[i] = goal(t)
+	}
+	return goals
+}
+
 func clause(head prol.Struct, body ...prol.Struct) prol.Clause {
-	return append(prol.Clause{head}, body...)
+	return append(prol.Clause{goal(head)}, goals(body)...)
 }
 
 func dcg(head prol.Struct, body ...prol.Struct) prol.DCG {
-	dcg, err := prol.NewDCG(append([]prol.Struct{head}, body...))
+	dcg, err := prol.NewDCG(append([]prol.Goal{goal(head)}, goals(body)...))
 	if err != nil {
 		panic(err.Error())
 	}

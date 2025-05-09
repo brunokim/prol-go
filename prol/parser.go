@@ -124,7 +124,7 @@ func (p *parser) clause() (Clause, bool) {
 	if !ok {
 		return Clause{}, false
 	}
-	clause := Clause{head}
+	clause := Clause{Goal{Term: head}}
 	p.ws()
 	if p.match(`\.`) {
 		return clause, true
@@ -138,7 +138,7 @@ func (p *parser) clause() (Clause, bool) {
 		return Clause{}, false
 	}
 	for _, term := range body {
-		clause = append(clause, term.(Struct))
+		clause = append(clause, Goal{Term: term.(Struct)})
 	}
 	if p.match(`\.`) {
 		return clause, true

@@ -6,21 +6,21 @@ import (
 	"strconv"
 )
 
-func unifyBuiltin(s Solver, goal Struct) ([]Struct, bool, error) {
-	arg1, arg2 := goal.Args[0], goal.Args[1]
+func unifyBuiltin(s Solver, goal Goal) ([]Goal, bool, error) {
+	arg1, arg2 := goal.Term.Args[0], goal.Term.Args[1]
 	return isSuccess(s.Unify(arg1, arg2))
 }
 
-func notEqualsBuiltin(s Solver, goal Struct) ([]Struct, bool, error) {
-	arg1, arg2 := goal.Args[0], goal.Args[1]
+func notEqualsBuiltin(s Solver, goal Goal) ([]Goal, bool, error) {
+	arg1, arg2 := goal.Term.Args[0], goal.Term.Args[1]
 	unwind := s.Unwind()
 	ok := s.Unify(arg1, arg2)
 	didBind := unwind()
 	return isSuccess(!ok && !didBind)
 }
 
-func gtBuiltin(s Solver, goal Struct) ([]Struct, bool, error) {
-	arg1, arg2 := Deref(goal.Args[0]), Deref(goal.Args[1])
+func gtBuiltin(s Solver, goal Goal) ([]Goal, bool, error) {
+	arg1, arg2 := Deref(goal.Term.Args[0]), Deref(goal.Term.Args[1])
 	i1, ok1 := arg1.(Int)
 	i2, ok2 := arg2.(Int)
 	if !ok1 || !ok2 {
@@ -29,8 +29,8 @@ func gtBuiltin(s Solver, goal Struct) ([]Struct, bool, error) {
 	return isSuccess(int(i1) > int(i2))
 }
 
-func gteBuiltin(s Solver, goal Struct) ([]Struct, bool, error) {
-	arg1, arg2 := Deref(goal.Args[0]), Deref(goal.Args[1])
+func gteBuiltin(s Solver, goal Goal) ([]Goal, bool, error) {
+	arg1, arg2 := Deref(goal.Term.Args[0]), Deref(goal.Term.Args[1])
 	i1, ok1 := arg1.(Int)
 	i2, ok2 := arg2.(Int)
 	if !ok1 || !ok2 {
@@ -39,8 +39,8 @@ func gteBuiltin(s Solver, goal Struct) ([]Struct, bool, error) {
 	return isSuccess(int(i1) >= int(i2))
 }
 
-func ltBuiltin(s Solver, goal Struct) ([]Struct, bool, error) {
-	arg1, arg2 := Deref(goal.Args[0]), Deref(goal.Args[1])
+func ltBuiltin(s Solver, goal Goal) ([]Goal, bool, error) {
+	arg1, arg2 := Deref(goal.Term.Args[0]), Deref(goal.Term.Args[1])
 	i1, ok1 := arg1.(Int)
 	i2, ok2 := arg2.(Int)
 	if !ok1 || !ok2 {
@@ -49,8 +49,8 @@ func ltBuiltin(s Solver, goal Struct) ([]Struct, bool, error) {
 	return isSuccess(int(i1) < int(i2))
 }
 
-func lteBuiltin(s Solver, goal Struct) ([]Struct, bool, error) {
-	arg1, arg2 := Deref(goal.Args[0]), Deref(goal.Args[1])
+func lteBuiltin(s Solver, goal Goal) ([]Goal, bool, error) {
+	arg1, arg2 := Deref(goal.Term.Args[0]), Deref(goal.Term.Args[1])
 	i1, ok1 := arg1.(Int)
 	i2, ok2 := arg2.(Int)
 	if !ok1 || !ok2 {
@@ -59,26 +59,26 @@ func lteBuiltin(s Solver, goal Struct) ([]Struct, bool, error) {
 	return isSuccess(int(i1) <= int(i2))
 }
 
-func atomBuiltin(s Solver, goal Struct) ([]Struct, bool, error) {
-	term := Deref(goal.Args[0])
+func atomBuiltin(s Solver, goal Goal) ([]Goal, bool, error) {
+	term := Deref(goal.Term.Args[0])
 	_, ok := term.(Atom)
 	return isSuccess(ok)
 }
 
-func intBuiltin(s Solver, goal Struct) ([]Struct, bool, error) {
-	term := Deref(goal.Args[0])
+func intBuiltin(s Solver, goal Goal) ([]Goal, bool, error) {
+	term := Deref(goal.Term.Args[0])
 	_, ok := term.(Int)
 	return isSuccess(ok)
 }
 
-func varBuiltin(s Solver, goal Struct) ([]Struct, bool, error) {
-	term := Deref(goal.Args[0])
+func varBuiltin(s Solver, goal Goal) ([]Goal, bool, error) {
+	term := Deref(goal.Term.Args[0])
 	_, ok := term.(*Ref)
 	return isSuccess(ok)
 }
 
-func atomToCharsBuiltin(s Solver, goal Struct) ([]Struct, bool, error) {
-	arg1 := Deref(goal.Args[0])
+func atomToCharsBuiltin(s Solver, goal Goal) ([]Goal, bool, error) {
+	arg1 := Deref(goal.Term.Args[0])
 	atom, ok := arg1.(Atom)
 	if !ok {
 		return isError(fmt.Errorf("atom_to_chars/2: arg #1: not an atom: %v", arg1))
@@ -88,20 +88,20 @@ func atomToCharsBuiltin(s Solver, goal Struct) ([]Struct, bool, error) {
 		chars[i] = Atom(string(ch))
 	}
 	term := FromList(chars)
-	return isSuccess(s.Unify(term, goal.Args[1]))
+	return isSuccess(s.Unify(term, goal.Term.Args[1]))
 }
 
-func charsToAtomBuiltin(s Solver, goal Struct) ([]Struct, bool, error) {
-	arg1 := Deref(goal.Args[0])
+func charsToAtomBuiltin(s Solver, goal Goal) ([]Goal, bool, error) {
+	arg1 := Deref(goal.Term.Args[0])
 	text, err := ToString(arg1)
 	if err != nil {
 		return isError(fmt.Errorf("chars_to_atom/2: arg #1: %w", err))
 	}
-	return isSuccess(s.Unify(Atom(text), goal.Args[1]))
+	return isSuccess(s.Unify(Atom(text), goal.Term.Args[1]))
 }
 
-func intToCharsBuiltin(s Solver, goal Struct) ([]Struct, bool, error) {
-	arg1 := Deref(goal.Args[0])
+func intToCharsBuiltin(s Solver, goal Goal) ([]Goal, bool, error) {
+	arg1 := Deref(goal.Term.Args[0])
 	i, ok := arg1.(Int)
 	if !ok {
 		return isError(fmt.Errorf("int_to_chars/2: arg #1: not an int: %v", arg1))
@@ -117,11 +117,11 @@ func intToCharsBuiltin(s Solver, goal Struct) ([]Struct, bool, error) {
 		i = a
 	}
 	term := FromList(chars)
-	return isSuccess(s.Unify(term, goal.Args[1]))
+	return isSuccess(s.Unify(term, goal.Term.Args[1]))
 }
 
-func charsToIntBuiltin(s Solver, goal Struct) ([]Struct, bool, error) {
-	arg1 := Deref(goal.Args[0])
+func charsToIntBuiltin(s Solver, goal Goal) ([]Goal, bool, error) {
+	arg1 := Deref(goal.Term.Args[0])
 	text, err := ToString(arg1)
 	if err != nil {
 		return isError(fmt.Errorf("chars_to_int/2: arg #1: %w", err))
@@ -130,21 +130,21 @@ func charsToIntBuiltin(s Solver, goal Struct) ([]Struct, bool, error) {
 	if err != nil {
 		return isError(fmt.Errorf("chars_to_int/2: arg #1: %w", err))
 	}
-	return isSuccess(s.Unify(Int(i), goal.Args[1]))
+	return isSuccess(s.Unify(Int(i), goal.Term.Args[1]))
 }
 
-func atomLengthBuiltin(s Solver, goal Struct) ([]Struct, bool, error) {
-	arg1 := Deref(goal.Args[0])
+func atomLengthBuiltin(s Solver, goal Goal) ([]Goal, bool, error) {
+	arg1 := Deref(goal.Term.Args[0])
 	atom, ok := arg1.(Atom)
 	if !ok {
 		return isError(fmt.Errorf("atom_length/2: arg #1: not an atom: %v", arg1))
 	}
 	length := Int(len(atom))
-	return isSuccess(s.Unify(length, goal.Args[1]))
+	return isSuccess(s.Unify(length, goal.Term.Args[1]))
 }
 
-func getPredicateBuiltin(s Solver, goal Struct) ([]Struct, bool, error) {
-	arg1 := Deref(goal.Args[0])
+func getPredicateBuiltin(s Solver, goal Goal) ([]Goal, bool, error) {
+	arg1 := Deref(goal.Term.Args[0])
 	ind, err := CompileIndicator(arg1)
 	if err != nil {
 		return isError(fmt.Errorf("get_predicate/2: %w", err))
@@ -155,16 +155,16 @@ func getPredicateBuiltin(s Solver, goal Struct) ([]Struct, bool, error) {
 		terms[i] = rule.ToAST()
 	}
 	x := FromList(terms)
-	return isSuccess(s.Unify(x, goal.Args[1]))
+	return isSuccess(s.Unify(x, goal.Term.Args[1]))
 }
 
-func putPredicateBuiltin(s Solver, goal Struct) ([]Struct, bool, error) {
-	arg1 := Deref(goal.Args[0])
+func putPredicateBuiltin(s Solver, goal Goal) ([]Goal, bool, error) {
+	arg1 := Deref(goal.Term.Args[0])
 	ind, err := CompileIndicator(arg1)
 	if err != nil {
 		return isError(fmt.Errorf("put_predicate/2: arg #1: %w", err))
 	}
-	rulesAST, tail := ToList(Deref(goal.Args[1]))
+	rulesAST, tail := ToList(Deref(goal.Term.Args[1]))
 	if tail != Nil {
 		return isError(fmt.Errorf("put_predicate/2: arg #2: not a proper list"))
 	}
@@ -178,8 +178,8 @@ func putPredicateBuiltin(s Solver, goal Struct) ([]Struct, bool, error) {
 	return isSuccess(s.PutPredicate(ind, rules))
 }
 
-func assertzBuiltin(s Solver, goal Struct) ([]Struct, bool, error) {
-	arg1 := Deref(goal.Args[0])
+func assertzBuiltin(s Solver, goal Goal) ([]Goal, bool, error) {
+	arg1 := Deref(goal.Term.Args[0])
 	rule, err := CompileRule(arg1)
 	if err != nil {
 		return isError(fmt.Errorf("assertz/1: %w", err))
@@ -194,22 +194,22 @@ func assertzBuiltin(s Solver, goal Struct) ([]Struct, bool, error) {
 	return isSuccess(true)
 }
 
-func printBuiltin(s Solver, goal Struct) ([]Struct, bool, error) {
-	arg1 := Deref(goal.Args[0])
+func printBuiltin(s Solver, goal Goal) ([]Goal, bool, error) {
+	arg1 := Deref(goal.Term.Args[0])
 	fmt.Println(arg1)
 	return isSuccess(true)
 }
 
-func isBuiltin(s Solver, goal Struct) ([]Struct, bool, error) {
-	arg2, err := Eval(goal.Args[1])
+func isBuiltin(s Solver, goal Goal) ([]Goal, bool, error) {
+	arg2, err := Eval(goal.Term.Args[1])
 	if err != nil {
 		return isError(fmt.Errorf("is/2: arg #2: %w", err))
 	}
-	return isSuccess(s.Unify(goal.Args[0], arg2))
+	return isSuccess(s.Unify(goal.Term.Args[0], arg2))
 }
 
-func consultBuiltin(s Solver, goal Struct) ([]Struct, bool, error) {
-	arg1 := Deref(goal.Args[0])
+func consultBuiltin(s Solver, goal Goal) ([]Goal, bool, error) {
+	arg1 := Deref(goal.Term.Args[0])
 	bs, err := os.ReadFile(string(arg1.(Atom)))
 	if err != nil {
 		return isError(fmt.Errorf("consult/1: arg #1: %w", err))
@@ -221,8 +221,8 @@ func consultBuiltin(s Solver, goal Struct) ([]Struct, bool, error) {
 	return isSuccess(true)
 }
 
-func putBreakpointBuiltin(s Solver, goal Struct) ([]Struct, bool, error) {
-	arg1 := Deref(goal.Args[0])
+func putBreakpointBuiltin(s Solver, goal Goal) ([]Goal, bool, error) {
+	arg1 := Deref(goal.Term.Args[0])
 	ind, err := CompileIndicator(arg1)
 	if err != nil {
 		return isError(fmt.Errorf("put_breakpoint/2: arg #1: %w", err))
@@ -230,8 +230,8 @@ func putBreakpointBuiltin(s Solver, goal Struct) ([]Struct, bool, error) {
 	return isSuccess(s.PutBreakpoint(ind))
 }
 
-func clearBreakpointBuiltin(s Solver, goal Struct) ([]Struct, bool, error) {
-	arg1 := Deref(goal.Args[0])
+func clearBreakpointBuiltin(s Solver, goal Goal) ([]Goal, bool, error) {
+	arg1 := Deref(goal.Term.Args[0])
 	ind, err := CompileIndicator(arg1)
 	if err != nil {
 		return isError(fmt.Errorf("clear_breakpoint/2: arg #1: %w", err))

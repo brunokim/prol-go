@@ -15,11 +15,23 @@ func s(name Atom, args ...Term) Struct {
 }
 
 func clause(head Struct, body ...Struct) Clause {
-	return append(Clause{head}, body...)
+	return append(Clause{goal(head)}, goals(body)...)
+}
+
+func goal(t Struct) Goal {
+	return Goal{Term: t}
+}
+
+func goals(ts []Struct) []Goal {
+	goals := make([]Goal, len(ts))
+	for i, t := range ts {
+		goals[i] = goal(t)
+	}
+	return goals
 }
 
 func dcg(head Struct, body ...Struct) DCG {
-	dcg, err := NewDCG(append([]Struct{head}, body...))
+	dcg, err := NewDCG(append([]Goal{goal(head)}, goals(body)...))
 	if err != nil {
 		panic(err.Error())
 	}

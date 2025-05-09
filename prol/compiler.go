@@ -57,7 +57,12 @@ func compileDCG(ast Struct) (Rule, error) {
 	if err != nil {
 		return nil, fmt.Errorf("body: %w", err)
 	}
-	return NewDCG(append([]Struct{head}, body...))
+	structs := append([]Struct{head}, body...)
+	goals := make([]Goal, len(structs))
+	for i, s := range structs {
+		goals[i] = Goal{Term: s}
+	}
+	return NewDCG(goals)
 }
 
 func compileClause(ast Struct) (Rule, error) {
@@ -78,7 +83,12 @@ func compileClause(ast Struct) (Rule, error) {
 	if err != nil {
 		return nil, fmt.Errorf("body: %w", err)
 	}
-	return Clause(append([]Struct{head}, body...)), nil
+	structs := append([]Struct{head}, body...)
+	goals := make([]Goal, len(structs))
+	for i, s := range structs {
+		goals[i] = Goal{Term: s}
+	}
+	return Clause(goals), nil
 }
 
 func compileTerm(ast Struct) (Term, error) {
