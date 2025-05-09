@@ -8,8 +8,8 @@ parse_database(\.(Rule, []), T0, T) :-
   parse_rule(Rule, T0, T).
 
 
-% parse_rule//1 parses a rule. For now, we only have one rule type (clause), but we will use this
-% predicate as a hook for other types later.
+% parse_rule//1 parses a rule. For now, we only have one rule type (clause),
+% but we will use this predicate as a hook for other types later.
 
 parse_rule(Rule, T0, T) :-
   parse_clause(Rule, T0, T).
@@ -30,7 +30,7 @@ parse_clause(clause(Head, [], S0), T0, T) :-
   lexer_state(T0, S0),
   parse_goal(Head, T0, T1),
   ws(T1, T2),
-  implied_by(T2, T).
+  full_stop(T2, T).
 
 
 % parse_goals//1 parses a sequence of one or more comma-separated goals.
@@ -95,7 +95,7 @@ parse_struct(struct(Name, []), T0, T) :-
   parse_atom(atom(Name), T0, T1),
   open_paren(T1, T2),
   ws(T2, T3),
-  open_paren(T3, T).
+  close_paren(T3, T).
 
 
 % parse_atom//1 parses an atom from the token stream.
@@ -129,3 +129,12 @@ ws(T0, T) :-
   ws(T1, T).
 ws(T, T).
 
+% Utilities.
+
+lexer_state(\.(token(_, _, State), _), State).
+
+open_paren(\.(token(open_paren, _, _), T), T).
+close_paren(\.(token(close_paren, _, _), T), T).
+comma(\.(token(comma, _, _), T), T).
+full_stop(\.(token(full_stop, _, _), T), T).
+implied_by(\.(token(implied_by, _, _), T), T).

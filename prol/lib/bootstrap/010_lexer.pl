@@ -2,7 +2,7 @@
 % It transforms a list of characters into a list of tokens.
 
 
-% The lexer keeps a small bit of state, namely, the position in the char list.
+% The lexer keeps a small bit of state, currently, the position in the char list.
 % The state updates at each new char read.
 
 initial_lex_state(0).
@@ -16,7 +16,7 @@ read_char(Char, S0, S, \.(Char, L), L) :-
 
 % lex_tokens/2 transforms a list of chars into tokens.
 % A token is represented by token(Type, Text, State).
-% - Type is the type of token (atom, var, int, whitespace, punctuation).
+% - Type is the type of token (atom, var, int, whitespace, etc.).
 % - Text is the text of the token.
 % - State is the lexer state before reading the token.
 
@@ -45,7 +45,7 @@ lex_token(Token, S0, S, L0, L) :-
 % identifier characters, starting with lowercase; or a single character prepended by a backslash; or
 % a nil atom (i.e., []).
 % 
-% Later, we will also accept single-quoted atoms.
+% Later, we will accept single-quoted atoms and remove this non-standard backslash syntax.
 
 lex_atom(token(atom, \.(Char, Chars), S0), S0, S, L0, L) :-
   read_char(Char, S0, S1, L0, L1),
@@ -154,3 +154,4 @@ identifier_char(Char) :-
 identifier_char(Char) :-
   ascii_digit(Char).
 
+line_comment_start(\%).
